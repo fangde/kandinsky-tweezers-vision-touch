@@ -1,55 +1,66 @@
-# 模型管协调,视觉管准头,触觉管抓稳
+# Model-Based Visual–Tactile Control for Precision Dexterous In-Hand Tweezer Manipulation
 
-灵巧手在掌操作(系列第 2 篇)的中文精读长页,以**康定斯基 / 包豪斯构造主义**风格排版。
+A single-page reading edition of the paper, typeset in a **Kandinsky / Bauhaus constructivist** style.
 
-> 原论文:*Model-Based Visual–Tactile Control for Precision Dexterous In-Hand Tweezer Manipulation*
+## What this is
 
-## 这是什么
+Where [Part 1](https://fangde.github.io/kandinsky-tweezers/) used pure analytical kinematics, this
+paper splits control into three roles that stay out of each other's way:
 
-上一篇(《手腕不动,让镊子在指尖走完那 5 毫米》)只用了纯解析运动学。这一篇在同样的固定腕框架上,
-把控制拆成三个互不越界的角色:
-
-| 角色 | 负责什么 | 手段 |
+| Role | Answers | Mechanism |
 |---|---|---|
-| **模型** | 手指应该怎么动 | 解析手—工具运动学 + 带约束的 QP |
-| **视觉** | 工具尖端真的到了吗 | 直接量镊子尖端的笛卡尔位姿,补掉模型误差 |
-| **触觉** | 工具还夹得稳吗 | 独立调节内力(零空间抓取力) |
+| **Model** | how should the fingers move? | analytical hand–tool kinematics + a constrained QP |
+| **Vision** | did the tool tip actually arrive? | measures the tweezer tip in Cartesian space, eats the model error |
+| **Touch** | is the tool still securely grasped? | regulates internal grasp force in the null space |
 
-结果是一个不用端到端学习、可解释、又比纯开环鲁棒得多的方案。论文里那个 5 → 4.6 → 4.93 → 4.99 → 5.00 mm
-的收敛序列,说的就是"模型不必一次算准"。
+The result is interpretable and needs no end-to-end learning. The paper's
+5 → 4.6 → 4.93 → 4.99 → 5.00 mm convergence sequence is exactly the point: the model does not
+have to be right the first time.
 
-## 设计
+## Pages
 
-| 维度 | 做法 |
+| File | Edition |
 |---|---|
-| 配色 | 稻纸底 `#F2EEE3` + 炭黑 `#131313` + 包豪斯三原色(正红 `#DF3524` / 铬黄 `#F0C200` / 群青 `#1D3FA6`),平涂不叠加 |
-| 字形 | 标题 Jost(几何无衬线,近 Futura),正文 Noto Sans SC,编号 IBM Plex Mono |
-| 版式 | 方角优先、零渐变、零投影、硬边描线;左侧书脊 + 右侧章节导航 + 顶部三原色阅读进度 |
-| 图形 | Hero 与内文插图均为几何抽象构图(圆 / 三角 / 方 / 同心圆 / 硬直斜线) |
-| 公式 | 39 组公式全部由 KaTeX 实时渲染,可直接选中复制 LaTeX |
-| 动效 | 入场分段揭示、滚动揭示、章节导航跟随;支持 `prefers-reduced-motion` |
+| `index.html` | English (primary) |
+| `zh.html` | 中文精读版 |
 
-## 文件结构
+Both editions carry a switch chip in the hero meta row.
+
+## Design
+
+| Dimension | Approach |
+|---|---|
+| Palette | rice-paper `#F2EEE3` + charcoal `#131313` + Bauhaus primaries (vermilion `#DF3524` / chrome yellow `#F0C200` / ultramarine `#1D3FA6`), flat fills only |
+| Type | Jost (geometric sans, Futura-adjacent) for display, Noto Sans SC for body, IBM Plex Mono for numerals |
+| Layout | square corners, no gradients, no shadows, hard-edged rules; left spine, right section nav, tri-colour reading progress |
+| Artwork | hero and inline plates are pure geometric compositions (circle / triangle / square / concentric arcs / hard diagonals) |
+| Maths | every equation rendered live with KaTeX — selectable, copy-ready LaTeX |
+| Motion | staggered hero reveal, scroll reveal, section tracking nav, `prefers-reduced-motion` aware |
+
+## Files
 
 ```
 .
-├── index.html          # 单页长文(自包含设计系统,仅依赖 CDN 字体 + KaTeX)
-├── assets/images/      # 5 张包豪斯风格插图
-├── .nojekyll           # 关闭 Jekyll 处理
+├── index.html            # English edition (self-contained design system; CDN fonts + KaTeX only)
+├── zh.html               # Chinese edition
+├── assets/images/        # 5 Bauhaus plates
+├── .nojekyll             # disable Jekyll
 └── README.md
 ```
 
-## 相关
+## Series
 
-- 系列第 1 篇:https://fangde.github.io/kandinsky-tweezers/
+- [Part 1 — Analytical Modelling with a Locked Wrist](https://fangde.github.io/kandinsky-tweezers/)
+- Part 2 (this page) — Visual positioning + tactile grasp
 
-## 本地预览
+## Local preview
 
 ```bash
 python3 -m http.server 8000
-# 打开 http://localhost:8000
+# open http://localhost:8000
 ```
 
-## 许可
+## Licence
 
-正文内容与图表版权归原论文作者所有;本页仅作排版与阅读体验的展示。
+The paper text and figures remain the property of the original authors; this repository only
+presents the typography and reading experience.

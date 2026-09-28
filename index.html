@@ -1,13 +1,13 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>模型管协调,视觉管准头,触觉管抓稳 · 康定斯基排版</title>
-<meta name="description" content="解析运动学负责手指怎么动,视觉闭环纠正镊子尖端的位置误差,触觉单独调节内抓取力。三个角色分开,而不是交给端到端学习。">
+<title>Model-Based Visual–Tactile Control for Precision Dexterous In-Hand Tweezer Manipulation · Kandinsky</title>
+<meta name="description" content="Analytical kinematics decide how the fingers should move, vision measures whether the tool tip actually arrived, and touch keeps the grasp from slipping. Three roles, deliberately separated — and no end-to-end learning required.">
 <meta name="theme-color" content="#F2EEE3">
-<meta property="og:title" content="模型管协调,视觉管准头,触觉管抓稳">
-<meta property="og:description" content="解析运动学负责手指怎么动,视觉闭环纠正镊子尖端的位置误差,触觉单独调节内抓取力。三个角色分开,而不是交给端到端学习。">
+<meta property="og:title" content="Model-Based Visual–Tactile Control for Precision Dexterous In-Hand Tweezer Manipulation">
+<meta property="og:description" content="Analytical kinematics decide how the fingers should move, vision measures whether the tool tip actually arrived, and touch keeps the grasp from slipping. Three roles, deliberately separated — and no end-to-end learning required.">
 <meta property="og:type" content="article">
 <meta property="og:image" content="https://fangde.github.io/kandinsky-tweezers-vision-touch/assets/images/cover_fig.jpg">
 <meta name="twitter:card" content="summary_large_image">
@@ -18,7 +18,7 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+" crossorigin="anonymous">
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" integrity="sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg" crossorigin="anonymous"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" integrity="sha384-43gviWU0YVjaDtb/GhzOouOXtZMP/7XUzwPTstBeZFe/+rCMvRwr4yROQP43s0Xk" crossorigin="anonymous"
-        onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],throwOnError:false,macros:{'\\R':'\\\\mathbb{R}'}});"></script>
+        onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'\\[',right:'\\]',display:true},{left:'\\(',right:'\\)',display:false},{left:'$',right:'$',display:false}],throwOnError:false});"></script>
 <style>
 /* ==========================================================================
    康定斯基 / 包豪斯 构造主义论文页
@@ -214,6 +214,11 @@ body{
 .meta li:last-child{border-right:0;}
 .meta li b{font-family:var(--body);font-weight:700;letter-spacing:0;}
 
+/* ---------- 英文长标题的 Hero 字号 ---------- */
+body.lang-en .hero h1{font-size:clamp(1.9rem,4.0vw,3.35rem);
+  letter-spacing:-.028em;line-height:1.07;}
+body.lang-en .hero-inner{max-width:52rem;}
+
 /* ---------- 章节头 ---------- */
 .sec{margin:5.5rem 0 0;}
 .sec-head{
@@ -339,6 +344,35 @@ blockquote p{margin:0 !important;color:var(--ink);font-weight:700;
   border-bottom:2px solid var(--yellow);padding-bottom:1px;}
 .foot .series a:hover{border-bottom-color:var(--red);}
 
+/* ---------- 列表 ---------- */
+.sec-body ul,.sec-body ol{margin:1.15rem 0;padding-left:0;list-style:none;}
+.sec-body li{margin:.45rem 0;line-height:1.8;position:relative;padding-left:1.75rem;}
+.sec-body ul>li::before{content:"";position:absolute;left:.15rem;top:.62em;
+  width:8px;height:8px;background:var(--red);}
+.sec-body ol{counter-reset:li;}
+.sec-body ol>li{counter-increment:li;padding-left:2.4rem;}
+.sec-body ol>li::before{content:counter(li,decimal-leading-zero);position:absolute;
+  left:0;top:.1em;font-family:var(--mono);font-size:11px;color:var(--paper);
+  background:var(--ink);padding:.2rem .36rem;letter-spacing:.04em;line-height:1;}
+
+/* ---------- 分节符:三原色硬条 ---------- */
+.rule{display:flex;gap:8px;margin:3.2rem 0;}
+.rule i{height:4px;flex:1;display:block;}
+.rule i:nth-child(1){background:var(--red);}
+.rule i:nth-child(2){background:var(--yellow);}
+.rule i:nth-child(3){background:var(--blue);}
+.rule i:nth-child(4){background:var(--ink);flex:2.4;}
+
+/* ---------- 单行 / 单符号公式的紧凑处理 ---------- */
+.eq.compact{padding:.6rem 1rem;border-left-width:3px;background:transparent;
+  border-left-color:var(--ink);}
+.eq.compact .katex{font-size:.97em;}
+
+/* ---------- 语言切换 ---------- */
+.meta li.lang a{color:var(--ink);text-decoration:none;
+  border-bottom:2px solid var(--yellow);padding-bottom:1px;}
+.meta li.lang a:hover{border-bottom-color:var(--red);}
+
 /* ---------- 回到顶部 ---------- */
 .totop{
   position:fixed;right:24px;bottom:24px;z-index:50;
@@ -380,7 +414,7 @@ blockquote p{margin:0 !important;color:var(--ink);font-weight:700;
 
 </style>
 </head>
-<body>
+<body class="lang-en">
 
 <div class="progress" aria-hidden="true">
   <i></i><i></i><i></i>
@@ -393,22 +427,24 @@ blockquote p{margin:0 !important;color:var(--ink);font-weight:700;
   <span class="spine-mark b"></span>
 </aside>
 
-<nav class="nav" aria-label="章节导航">
+<nav class="nav" aria-label="Section navigation">
   <ol>
-<li><a href="#s01"><span class="nav-num">01</span><span class="nav-txt">三个角色,各管一段</span></a></li>
-<li><a href="#s02"><span class="nav-num">02</span><span class="nav-txt">系统定义</span></a></li>
-<li><a href="#s03"><span class="nav-num">03</span><span class="nav-txt">手指与工具之间那层约束</span></a></li>
-<li><a href="#s04"><span class="nav-num">04</span><span class="nav-txt">任务定义在镊子尖端上</span></a></li>
-<li><a href="#s05"><span class="nav-num">05</span><span class="nav-txt">控制器:先用解析模型把手指协调起来</span></a></li>
-<li><a href="#s06"><span class="nav-num">06</span><span class="nav-txt">视觉:别指望模型完全准</span></a></li>
-<li><a href="#s07"><span class="nav-num">07</span><span class="nav-txt">触觉:视觉管去哪,触觉管夹没夹稳</span></a></li>
-<li><a href="#s08"><span class="nav-num">08</span><span class="nav-txt">完整架构:三个角色被刻意分开</span></a></li>
-<li><a href="#s09"><span class="nav-num">09</span><span class="nav-txt">二维算例:5 → 4.6 → 4.93 → 4.99 → 5.00</span></a></li>
-<li><a href="#s10"><span class="nav-num">10</span><span class="nav-txt">可选扩展:让雅可比在线自适应</span></a></li>
-<li><a href="#s11"><span class="nav-num">11</span><span class="nav-txt">实验设计与消融实验</span></a></li>
-<li><a href="#s12"><span class="nav-num">12</span><span class="nav-txt">讨论</span></a></li>
-<li><a href="#s13"><span class="nav-num">13</span><span class="nav-txt">结论</span></a></li>
-<li><a href="#s14"><span class="nav-num">14</span><span class="nav-txt">参考文献</span></a></li>
+    <li><a href="#s01"><span class="nav-num">01</span><span class="nav-txt">Abstract</span></a></li>
+    <li><a href="#s02"><span class="nav-num">02</span><span class="nav-txt">I. Introduction</span></a></li>
+    <li><a href="#s03"><span class="nav-num">03</span><span class="nav-txt">II. System Definition</span></a></li>
+    <li><a href="#s04"><span class="nav-num">04</span><span class="nav-txt">III. Finger–Tool Kinematic Model</span></a></li>
+    <li><a href="#s05"><span class="nav-num">05</span><span class="nav-txt">IV. Tool-Tip Task Model</span></a></li>
+    <li><a href="#s06"><span class="nav-num">06</span><span class="nav-txt">V. Cartesian Tool-Tip Controller</span></a></li>
+    <li><a href="#s07"><span class="nav-num">07</span><span class="nav-txt">VI. Visual Tool-Tip Feedback</span></a></li>
+    <li><a href="#s08"><span class="nav-num">08</span><span class="nav-txt">VII. Tactile and Grasp-Force Control</span></a></li>
+    <li><a href="#s09"><span class="nav-num">09</span><span class="nav-txt">VIII. Complete Visual–Tactile Control Architecture</span></a></li>
+    <li><a href="#s10"><span class="nav-num">10</span><span class="nav-txt">IX. Simplified Two-Dimensional Example</span></a></li>
+    <li><a href="#s11"><span class="nav-num">11</span><span class="nav-txt">X. Online Jacobian Adaptation</span></a></li>
+    <li><a href="#s12"><span class="nav-num">12</span><span class="nav-txt">XI. Experimental Evaluation</span></a></li>
+    <li><a href="#s13"><span class="nav-num">13</span><span class="nav-txt">XII. Ablation Study</span></a></li>
+    <li><a href="#s14"><span class="nav-num">14</span><span class="nav-txt">XIII. Discussion</span></a></li>
+    <li><a href="#s15"><span class="nav-num">15</span><span class="nav-txt">XIV. Conclusion</span></a></li>
+    <li><a href="#s16"><span class="nav-num">16</span><span class="nav-txt">References</span></a></li>
   </ol>
 </nav>
 
@@ -431,279 +467,757 @@ blockquote p{margin:0 !important;color:var(--ink);font-weight:700;
   </div>
 
   <div class="hero-inner">
-    <p class="kicker">论文精读 · 灵巧手在掌操作</p>
-    <h1>模型管协调,<br>视觉管<span class="w-red">准头</span>,<br>触觉管<span class="w-yellow">抓稳</span></h1>
-    <p class="lead">解析运动学负责手指怎么动,视觉闭环纠正镊子尖端的位置误差,触觉单独调节内抓取力。三个角色分开,而不是交给端到端学习。</p>
+    <p class="kicker">Paper walkthrough · Visual–tactile dexterous manipulation</p>
+    <h1>Model-Based<br><span class="w-red">Visual–Tactile</span> Control<br>for Precision<br><span class="w-yellow">Dexterous</span> In-Hand<br>Tweezer Manipulation</h1>
+    <p class="lead">Analytical kinematics decide how the fingers should move, vision measures whether the tool tip actually arrived, and touch keeps the grasp from slipping. Three roles, deliberately separated — and no end-to-end learning required.</p>
     <ul class="meta">
-      <li><b>康定斯基排版</b></li>
-      <li>包豪斯三原色</li>
-      <li>约 13 分钟</li>
-      <li>公式 <b>39</b> 组</li>
+      <li><b>Kandinsky</b></li>
+      <li>Bauhaus primaries</li>
+      <li>~13 min read</li>
+      <li>Equations <b>107</b></li>
+      <li class="lang"><a href="zh.html">中文</a></li>
     </ul>
   </div>
 </header>
 
 <main class="shell">
-    <blockquote><p>解析运动学负责手指怎么动,视觉闭环纠正镊子尖端的位置误差,触觉单独调节内抓取力。三个角色分开,而不是交给端到端学习——这是上篇腕部固定框架的续作。</p></blockquote>
 <section class="sec" id="s01">
   <div class="sec-head">
     <span class="sec-num c-red">01</span>
-    <h2>三个角色,各管一段</h2>
+    <h2>Abstract</h2>
   </div>
   <div class="sec-body">
-    <p>灵巧手的内部自由度比普通夹爪多得多。但在大多数机器人用工具的系统里,这些自由度只用来"抓稳"——工具一旦被抓住,它在空间里怎么走,基本都交给机械臂了。</p>
-    <p>人的精细操作不是这样。写字、用镊子、扎针、做精细装配的时候,腕子几乎不动,手就能让工具尖端准确地挪动几毫米。</p>
-    <p>于是有了另一种分工:</p>
-    <div class="eq"><div class="eq-body">$$\text{机械臂}\rightarrow\text{粗定位}$$</div></div>
-    <div class="eq"><div class="eq-body">$$\text{灵巧手}\rightarrow\text{精定位}$$</div></div>
-    <p>这篇工作要研究的就是 <strong class="m-ink">fixed-wrist 灵巧工具操作</strong>:所有局部运动都由手指关节产生。具体任务是——</p>
-    <blockquote><p>灵巧手攥着一把镊子,机械腕完全固定,靠手指的协同运动,把镊子尖端在约 ±5 毫米的局部笛卡尔工作空间里挪动。</p></blockquote>
-    <p>目标不是"把手指动起来",而是<strong class="m-ink">直接控制工具尖端的笛卡尔状态</strong>。</p>
-    <p>经典多指操作研究早就建立了手指运动学、接触约束、物体运动与抓取力之间的解析关系,Cole、Hauser 和 Sastry 就给出了带滚动接触与摩擦约束的多指操作运动学与控制 [1]。真拿镊子做操作也有人做过:Senoo 等人分析手指与镊子的接触,接上高速视觉伺服,在二维和三维实验里用镊子夹小物体 [2]。之后视觉伺服又被用来控制多指手所握物体的笛卡尔位置,用视觉信息抑制扰动、把控制环合在物体层面 [3]。更近的工作则在研究多指操作的可微滚动接触模型与轨迹优化 [4],以及用触觉力调节来提升接触变化下的鲁棒性 [5]。</p>
-    <p>和"要么全靠一个精确的解析模型、要么干脆整个换成强化学习"这两条路都不同,这篇提的是一个混合方案:</p>
-    <div class="eq"><div class="eq-body">$$\text{解析运动学}+\text{视觉误差纠正}+\text{触觉力调节}$$</div></div>
-    <p><mark class="m-y">解析模型负责快速、可解释的运动协调;视觉补掉手—工具模型的误差;触觉负责调抓取力、并且发现接触退化</mark>。三者各干各的,谁也不越界。</p>
-    <figure class="plate">
-      <img src="assets/images/fig_roles.jpg" alt="三个角色:模型、视觉、触觉" loading="lazy">
-      <figcaption><span class="fig-no">01</span>三个角色:模型、视觉、触觉</figcaption>
-    </figure>
+    <p>Dexterous robotic hands are typically used to grasp a tool while its Cartesian motion is generated by the robot arm. In many human precision-manipulation tasks, however, the wrist remains nearly stationary and small tool motions are produced primarily through coordinated finger motion. Examples include manipulating tweezers, forceps, needles, pens, and other precision instruments.</p>
+    <p>This paper presents a model-based visual–tactile control framework for precision in-hand manipulation of tweezers using a multi-finger dexterous hand with a fixed wrist. An analytical hand–tool kinematic model maps finger joint velocities to tool motion through finger–tool contact constraints. Visual feedback directly measures the Cartesian pose of the tweezer tip and compensates for accumulated modeling and contact errors. Tactile or force feedback independently regulates internal grasp forces to maintain stable finger–tool contact.</p>
+    <p>The resulting control architecture separates three functions: analytical kinematics determine coordinated finger motion, visual servoing corrects tool-tip positioning error, and tactile feedback maintains grasp stability. The target application is millimeter-scale manipulation within a local workspace, such as moving the tweezer tip by ±5 mm along arbitrary Cartesian directions while maintaining tool orientation. The proposed framework provides a simple and interpretable alternative to end-to-end learning for high-precision dexterous tool manipulation.</p>
+    <div class="rule" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
   </div>
 </section>
 <section class="sec" id="s02">
   <div class="sec-head">
     <span class="sec-num c-yellow">02</span>
-    <h2>系统定义</h2>
+    <h2>I. Introduction</h2>
   </div>
   <div class="sec-body">
-    <p>设灵巧手有 n 个主动手指关节,关节构型记为</p>
-    <div class="eq"><div class="eq-body">$$q\in\mathbb{R}^{n}$$</div></div>
-    <p>精细操作期间假定腕子固定:</p>
-    <div class="eq"><div class="eq-body">$$\dot q_{\mathrm{arm}}=0$$</div></div>
-    <p>镊子被拆成两部分:六维刚体位姿,加上一个描述开合的内部自由度。刚体位姿是</p>
-    <div class="eq"><div class="eq-body">$$T_o=\begin{bmatrix}R_o&p_o\\0&1\end{bmatrix}\in SE(3)$$</div></div>
-    <p>它的空间速度是 $V_o=[v_o;\ \omega_o]$。再用 α 表示镊子的开合状态,于是工具的广义速度是</p>
-    <div class="eq"><div class="eq-body">$$\nu=\begin{bmatrix}V_o\\\dot\alpha\end{bmatrix}\in\mathbb{R}^{7}$$</div></div>
+    <p>Dexterous robot hands possess significantly more internal degrees of freedom than conventional grippers. Nevertheless, in most robotic tool-use systems, these degrees of freedom are mainly used to establish a stable grasp. Once the tool has been grasped, Cartesian manipulation is usually performed by the arm.</p>
+    <p>This differs from many forms of human precision manipulation.</p>
+    <p>When writing with a pen, manipulating tweezers, inserting a needle, or performing delicate assembly, the hand can generate several millimeters of accurate tool-tip movement while the wrist remains approximately stationary.</p>
+    <p>This motivates a different decomposition of robotic manipulation:</p>
+    <div class="eq"><div class="eq-body">$$\text{robot arm}
+\rightarrow
+\text{coarse positioning},$$</div></div>
+    <div class="eq"><div class="eq-body">$$\text{dexterous hand}
+\rightarrow
+\text{fine positioning}.$$</div></div>
+    <p>The objective of this work is therefore to investigate <strong class="m-ink">fixed-wrist dexterous tool manipulation</strong>, where all local tool motion is generated by finger articulation.</p>
+    <p>The specific task considered in this paper is:</p>
+    <blockquote><p>A dexterous robotic hand holds a pair of tweezers. The robot wrist remains fixed, while coordinated finger motions move the tweezer tip within a local Cartesian workspace of approximately ±5 mm.</p></blockquote>
+    <p>The objective is not merely to manipulate the fingers, but to directly control the Cartesian state of the <strong class="m-ink">tool tip</strong>.</p>
+    <p>Classical multifinger manipulation research established analytical relationships between finger kinematics, contact constraints, object motion, and grasp forces. Cole, Hauser, and Sastry, for example, formulated the kinematics and control of multifingered manipulation with rolling contact and friction constraints.</p>
+    <p>Direct robotic manipulation of tweezers has also been studied. Senoo et al. analyzed finger–tweezer contact and combined it with high-speed visual servoing to grasp small objects with tweezers in both 2-D and 3-D experiments.</p>
+    <p>Visual servoing has subsequently been demonstrated for controlling the Cartesian position of an object held by a multifingered hand, using visual information to reject disturbances and close the object-level control loop.</p>
+    <p>More recent work has investigated differentiable rolling-contact models and trajectory optimization for multi-finger manipulation, as well as tactile force regulation for improving robustness under changing contacts.</p>
+    <p>Rather than relying exclusively on an accurate analytical model or replacing the model entirely with reinforcement learning, we propose a hybrid approach:</p>
+    <div class="eq"><div class="eq-body">$$\boxed{
+\text{Analytical Kinematics}
++
+\text{Visual Error Correction}
++
+\text{Tactile Force Regulation}
+}$$</div></div>
+    <figure class="plate">
+      <img src="assets/images/fig_roles.jpg" alt="Three roles: model, vision, touch" loading="lazy">
+      <figcaption><span class="fig-no">01</span>Three roles: model, vision, touch</figcaption>
+    </figure>
+    <p>The analytical model provides fast and interpretable motion coordination. Vision compensates for inaccuracies in the hand–tool model, while tactile sensing regulates grasp forces and detects contact degradation.</p>
+    <div class="rule" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
   </div>
 </section>
 <section class="sec" id="s03">
   <div class="sec-head">
     <span class="sec-num c-blue">03</span>
-    <h2>手指与工具之间那层约束</h2>
+    <h2>II. System Definition</h2>
   </div>
   <div class="sec-body">
-    <p>假设有 m 根手指与工具保持接触。对第 i 根手指,$p_i=f_i(q_i)$,它产生的接触点速度是 $\dot p_i=J_i(q_i)\dot q_i$。把所有手指叠起来:</p>
-    <div class="eq"><div class="eq-body">$$v_c=J_h(q)\dot q,\qquad J_h=\operatorname{diag}(J_1,\ldots,J_m)$$</div></div>
-    <p>也就是</p>
-    <div class="eq"><div class="eq-body">$$v_c=J_h(q)\dot q$$</div><span class="eq-tag">(1)</span></div>
-    <p>再把接触点 i 在工具坐标系里的位置记为 $r_i(\alpha)$,它的世界位置是 $p_{c_i}=p_o+R_or_i(\alpha)$。求导得</p>
-    <div class="eq"><div class="eq-body">$$\dot p_{c_i}=v_o+\omega_o\times R_or_i+R_o\frac{\partial r_i}{\partial\alpha}\dot\alpha$$</div></div>
-    <p>写成紧凑形式就是 $\dot p_{c_i}=A_i(T_o,\alpha)\nu$;把所有接触叠起来得到 $v_c=A(T_o,\alpha)\nu$。假设接触保持局部粘滞,就得到</p>
-    <div class="eq"><div class="eq-body">$$J_h(q)\dot q=A(T_o,\alpha)\nu$$</div><span class="eq-tag">(2)</span></div>
-    <p>式 (2) 构成了核心解析模型。它表达的关系是</p>
-    <div class="eq"><div class="eq-body">$$\text{手指关节}\rightarrow\text{接触点运动}\rightarrow\text{工具运动}$$</div></div>
+    <p>Consider a dexterous hand with \(n\) actuated finger joints.</p>
+    <p>Let</p>
+    <div class="eq compact"><div class="eq-body">$$q\in\mathbb{R}^{n}$$</div></div>
+    <p>represent the hand joint configuration.</p>
+    <p>The wrist is assumed to be fixed during fine manipulation:</p>
+    <div class="eq compact"><div class="eq-body">$$\dot q_{\mathrm{arm}}=0.$$</div></div>
+    <p>The tweezers are modeled using two components:</p>
+    <ol>
+      <li>the six-dimensional rigid-body pose of the tool;</li>
+      <li>one internal degree of freedom describing opening and closing.</li>
+    </ol>
+    <p>The rigid-body pose is</p>
+    <div class="eq"><div class="eq-body">$$T_o=
+\begin{bmatrix}
+R_o&p_o\\
+0&1
+\end{bmatrix}
+\in SE(3),$$</div></div>
+    <p>and its spatial velocity is</p>
+    <div class="eq"><div class="eq-body">$$V_o=
+\begin{bmatrix}
+v_o\\
+\omega_o
+\end{bmatrix}.$$</div></div>
+    <p>Let</p>
+    <div class="eq compact"><div class="eq-body">$$\alpha$$</div></div>
+    <p>denote the opening state of the tweezers.</p>
+    <p>The generalized tool velocity is therefore</p>
+    <div class="eq"><div class="eq-body">$$\nu=
+\begin{bmatrix}
+V_o\\
+\dot\alpha
+\end{bmatrix}
+\in\mathbb{R}^{7}.$$</div></div>
+    <div class="rule" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
   </div>
 </section>
 <section class="sec" id="s04">
   <div class="sec-head">
     <span class="sec-num c-red">04</span>
-    <h2>任务定义在镊子尖端上</h2>
+    <h2>III. Finger–Tool Kinematic Model</h2>
   </div>
   <div class="sec-body">
-    <p>真正要操作的不是手指接触点,而是镊子尖端。设 $p_t$ 是两个尖端的中点,期望的笛卡尔任务可以表示成</p>
-    <div class="eq"><div class="eq-body">$$x=\begin{bmatrix}p_t\\\phi_o\end{bmatrix}\in\mathbb{R}^{6}$$</div></div>
-    <p>其中 $p_t$ 是尖端位置,$\phi_o$ 是工具朝向。如果开合量也要控,就变成</p>
-    <div class="eq"><div class="eq-body">$$x=\begin{bmatrix}p_t\\\phi_o\\d\end{bmatrix}\in\mathbb{R}^{7},\qquad d=\|p_t^+-p_t^-\|$$</div></div>
-    <p>尖端速度与工具广义速度通过下面这条式子联系起来:</p>
-    <div class="eq"><div class="eq-body">$$\dot x=H(T_o,\alpha)\nu$$</div><span class="eq-tag">(3)</span></div>
-    <p>式 (2) 和式 (3) 合起来,给出了一条完整的解析链:</p>
-    <div class="eq"><div class="eq-body">$$\dot q\rightarrow J_h\rightarrow v_c\rightarrow A\rightarrow\nu\rightarrow H\rightarrow\dot x_{\mathrm{tip}}$$</div></div>
-    <p><mark class="m-y">这条链可以整体看成一个新的「手—工具任务雅可比」</mark>。局部上,$\dot x_{\mathrm{tip}}=J_{\mathrm{task}}\dot q$。和传统机械臂雅可比不一样的是,$J_{\mathrm{task}}$ 同时包含了灵巧手和被抓住的工具——它描述的不是手指去哪,而是<strong class="m-ink">工具尖端去哪</strong>。</p>
-    <figure class="plate">
-      <img src="assets/images/fig_chain.jpg" alt="从关节速度到尖端速度的解析链条" loading="lazy">
-      <figcaption><span class="fig-no">02</span>从关节速度到尖端速度的解析链条</figcaption>
-    </figure>
+    <p>Suppose that \(m\) fingers maintain contact with the tool.</p>
+    <p>For finger \(i\),</p>
+    <div class="eq compact"><div class="eq-body">$$p_i=f_i(q_i),$$</div></div>
+    <p>and the contact-point velocity generated by the finger is</p>
+    <div class="eq compact"><div class="eq-body">$$\dot p_i=J_i(q_i)\dot q_i.$$</div></div>
+    <p>Stacking all finger contacts gives</p>
+    <div class="eq compact"><div class="eq-body">$$v_c=J_h(q)\dot q,$$</div></div>
+    <p>where</p>
+    <div class="eq compact"><div class="eq-body">$$J_h=
+\operatorname{diag}(J_1,\ldots,J_m).$$</div></div>
+    <p>Thus,</p>
+    <div class="eq"><div class="eq-body">$$\boxed{
+v_c=J_h(q)\dot q.
+}$$</div><span class="eq-tag">(1)</span></div>
+    <p>Now let \(r_i(\alpha)\) denote contact \(i\) expressed in the tool coordinate frame.</p>
+    <p>Its world position is</p>
+    <div class="eq compact"><div class="eq-body">$$p_{c_i}=p_o+R_or_i(\alpha).$$</div></div>
+    <p>Differentiation gives</p>
+    <div class="eq"><div class="eq-body">$$\dot p_{c_i}
+=
+v_o
++
+\omega_o\times R_or_i
++
+R_o
+\frac{\partial r_i}{\partial\alpha}
+\dot\alpha.$$</div></div>
+    <p>This can be written as</p>
+    <div class="eq compact"><div class="eq-body">$$\dot p_{c_i}=A_i(T_o,\alpha)\nu.$$</div></div>
+    <p>Stacking all contacts,</p>
+    <div class="eq compact"><div class="eq-body">$$v_c=A(T_o,\alpha)\nu.$$</div></div>
+    <p>Assuming that the contacts remain locally sticking,</p>
+    <div class="eq"><div class="eq-body">$$\boxed{
+J_h(q)\dot q=A(T_o,\alpha)\nu.
+}$$</div><span class="eq-tag">(2)</span></div>
+    <p>Equation (2) forms the central analytical model.</p>
+    <p>It expresses the relationship</p>
+    <div class="eq"><div class="eq-body">$$\text{finger joints}
+\rightarrow
+\text{contact motion}
+\rightarrow
+\text{tool motion}.$$</div></div>
+    <div class="rule" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
   </div>
 </section>
 <section class="sec" id="s05">
   <div class="sec-head">
     <span class="sec-num c-yellow">05</span>
-    <h2>控制器:先用解析模型把手指协调起来</h2>
+    <h2>IV. Tool-Tip Task Model</h2>
   </div>
   <div class="sec-body">
-    <p>设期望的尖端位姿是 $x_d$,实测位姿是 $\hat x$,笛卡尔误差 $e_x=x_d-\hat x$。解算速度控制器给出 $v_x^*=\dot x_d+K_pe_x$;点对点定位时 $\dot x_d=0$,于是</p>
-    <div class="eq"><div class="eq-body">$$v_x^*=K_p(x_d-\hat x)$$</div><span class="eq-tag">(4)</span></div>
-    <p>期望的手指速度则通过带约束的优化拿到:</p>
-    <div class="eq"><div class="eq-body">$$\begin{aligned}\min_{\dot q,\nu}\quad&\|H\nu-v_x^*\|_{W_x}^2+\lambda_q\|\dot q\|^2+\lambda_p\|q-q_{\mathrm{nom}}\|^2\\\text{s.t.}\quad&J_h(q)\dot q=A(T_o,\alpha)\nu\\&q_{\min}\le q+\dot q\Delta t\le q_{\max}\\&\dot q_{\min}\le\dot q\le\dot q_{\max}\end{aligned}$$</div><span class="eq-tag">(5)</span></div>
-    <p>这个 QP 在尊重关节限位、维持偏好抓握构型的前提下,给出协调的手指运动。<mark class="m-y">注意目标函数里多了一项 $\|q-q_{\mathrm{nom}}\|^2$——把手拉回舒服的手型,这在前一篇里是可选,这篇是标配</mark>。</p>
+    <p>The actual manipulation objective is expressed at the tweezer tip rather than at the finger contacts.</p>
+    <p>Let</p>
+    <div class="eq compact"><div class="eq-body">$$p_t$$</div></div>
+    <p>be the midpoint of the two tweezer tips.</p>
+    <p>The desired Cartesian task can be represented as</p>
+    <div class="eq"><div class="eq-body">$$x=
+\begin{bmatrix}
+p_t\\
+\phi_o
+\end{bmatrix}
+\in\mathbb{R}^{6},$$</div></div>
+    <p>where \(p_t\) represents tip position and \(\phi_o\) represents tool orientation.</p>
+    <p>If opening is also controlled,</p>
+    <div class="eq"><div class="eq-body">$$x=
+\begin{bmatrix}
+p_t\\
+\phi_o\\
+d
+\end{bmatrix}
+\in\mathbb{R}^{7},$$</div></div>
+    <p>where</p>
+    <div class="eq compact"><div class="eq-body">$$d=\|p_t^+-p_t^-\|$$</div></div>
+    <p>is tip separation.</p>
+    <p>Tool-tip velocity is related to the generalized tool velocity through</p>
+    <div class="eq"><div class="eq-body">$$\boxed{
+\dot x=H(T_o,\alpha)\nu.
+}$$</div><span class="eq-tag">(3)</span></div>
+    <p>Equations (2) and (3) therefore provide a complete analytical chain:</p>
+    <div class="eq"><div class="eq-body">$$\boxed{
+\dot q
+\rightarrow
+J_h
+\rightarrow
+v_c
+\rightarrow
+A
+\rightarrow
+\nu
+\rightarrow
+H
+\rightarrow
+\dot x_{tip}.
+}$$</div></div>
+    <p>This can be interpreted as a <strong class="m-ink">hand–tool task Jacobian</strong>.</p>
+    <p>Locally,</p>
+    <div class="eq compact"><div class="eq-body">$$\dot x_{tip}
+=
+J_{\mathrm{task}}\dot q.$$</div></div>
+    <figure class="plate">
+      <img src="assets/images/fig_chain.jpg" alt="From joint velocity to tip velocity" loading="lazy">
+      <figcaption><span class="fig-no">02</span>From joint velocity to tip velocity</figcaption>
+    </figure>
+    <p>Unlike a conventional arm Jacobian, \(J_{\mathrm{task}}\) includes both the robot hand and the grasped tool.</p>
+    <div class="rule" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
   </div>
 </section>
 <section class="sec" id="s06">
   <div class="sec-head">
     <span class="sec-num c-blue">06</span>
-    <h2>视觉:别指望模型完全准</h2>
+    <h2>V. Cartesian Tool-Tip Controller</h2>
   </div>
   <div class="sec-body">
-    <p>纯解析控制有个前提假设:$J_h$、$A$、$H$ 能准确描述真实系统。对一把攥着镊子的灵巧手来说,这个假设很难成立。误差来源一大堆:手指标定不准、指尖软组织变形、接触位置漂移、腱传动误差、少量滑移、镊子自身的柔顺性,以及初始抓握的不确定性。</p>
-    <p>所以控制器干脆把闭环直接合在真正重要的那个量上——<strong class="m-ink">镊子尖端的位姿</strong>。外部相机、双目系统、光学追踪器或者标记点系统给出 $\hat x_{\mathrm{tip}}$。</p>
-    <p>视觉<strong class="m-ink">不替代</strong>解析控制器,它只负责提供式 (4) 里的那个误差项:</p>
-    <div class="eq"><div class="eq-body">$$e_x=x_d-\hat x_{\mathrm{tip}}$$</div></div>
-    <p>于是整个架构变成</p>
-    <div class="eq"><div class="eq-body">$$x_d\rightarrow e_x\rightarrow\text{笛卡尔控制器}\rightarrow\text{模型 QP}\rightarrow\dot q\rightarrow\text{手/工具}$$</div></div>
-    <p>$\hat x_{\mathrm{tip}}$ 由视觉反馈回来。<mark class="m-y">哪怕解析模型算出的手指运动不完美,下一个控制周期也会看到残余的笛卡尔误差,并把它纠掉</mark>。对精密镊子操作而言这点特别有用:直接测量工具尖端,就不需要把每一个"手指—工具接触状态"都估得那么准。</p>
-    <figure class="plate">
-      <img src="assets/images/fig_loop.jpg" alt="视觉把控制环合在镊子尖端上" loading="lazy">
-      <figcaption><span class="fig-no">03</span>视觉把控制环合在镊子尖端上</figcaption>
-    </figure>
+    <p>Let the desired tool-tip pose be</p>
+    <div class="eq compact"><div class="eq-body">$$x_d.$$</div></div>
+    <p>The measured pose is</p>
+    <div class="eq compact"><div class="eq-body">$$\hat x.$$</div></div>
+    <p>The Cartesian error is</p>
+    <div class="eq compact"><div class="eq-body">$$e_x=x_d-\hat x.$$</div></div>
+    <p>A resolved-rate controller generates</p>
+    <div class="eq compact"><div class="eq-body">$$v_x^*
+=
+\dot x_d+K_pe_x.$$</div></div>
+    <p>For point-to-point positioning,</p>
+    <div class="eq compact"><div class="eq-body">$$\dot x_d=0,$$</div></div>
+    <p>and therefore</p>
+    <div class="eq"><div class="eq-body">$$\boxed{
+v_x^*=K_p(x_d-\hat x).
+}$$</div><span class="eq-tag">(4)</span></div>
+    <p>The desired finger velocities can then be obtained through constrained optimization:</p>
+    <div class="eq"><div class="eq-body">$$\begin{aligned}
+\min_{\dot q,\nu}\quad&
+\|H\nu-v_x^*\|_{W_x}^2
++
+\lambda_q\|\dot q\|^2
++
+\lambda_p\|q-q_{\mathrm{nom}}\|^2
+\\
+\text{s.t.}\quad&
+J_h(q)\dot q=A(T_o,\alpha)\nu,
+\\
+&q_{\min}
+\le
+q+\dot q\Delta t
+\le
+q_{\max},
+\\
+&\dot q_{\min}
+\le
+\dot q
+\le
+\dot q_{\max}.
+\end{aligned}$$</div><span class="eq-tag">(5)</span></div>
+    <p>This QP formulation provides coordinated finger motion while respecting joint limits and maintaining a preferred grasp configuration.</p>
+    <div class="rule" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
   </div>
 </section>
 <section class="sec" id="s07">
   <div class="sec-head">
     <span class="sec-num c-red">07</span>
-    <h2>触觉:视觉管去哪,触觉管夹没夹稳</h2>
+    <h2>VI. Visual Tool-Tip Feedback</h2>
   </div>
   <div class="sec-body">
-    <p>视觉反馈控制的是镊子<strong class="m-ink">去哪里</strong>,它不保证手指一直稳稳夹着。设接触力向量 $f=[f_1^T,\ldots,f_m^T]^T$,作用在工具上的净力旋量是 $w=Gf$,$G$ 是抓取矩阵。手指关节力矩满足</p>
-    <div class="eq"><div class="eq-body">$$\tau=J_h^Tf$$</div><span class="eq-tag">(6)</span></div>
-    <p>接触力可以拆成 $f=f_{\mathrm{task}}+f_{\mathrm{int}}$,其中内力满足</p>
-    <div class="eq"><div class="eq-body">$$Gf_{\mathrm{int}}=0$$</div><span class="eq-tag">(7)</span></div>
-    <p>这些力能提高抓取稳定性,又不会让工具产生任何净运动。所以触觉控制器可以专门去调内力,$f_{\mathrm{int}}\rightarrow f_{\mathrm{int}}^d$,例如</p>
-    <div class="eq"><div class="eq-body">$$\tau_f=J_h^TK_f(f_d-\hat f)$$</div><span class="eq-tag">(8)</span></div>
-    <p>完整的关节指令可以概念性地拆成两段:</p>
-    <div class="eq"><div class="eq-body">$$\tau=\tau_{\mathrm{motion}}+\tau_{\mathrm{grasp}}$$</div></div>
-    <p>运动控制器产生跟踪工具尖端所需要的协调运动,抓取控制器则维持足够的法向力,防止滑移。近年触觉在掌操作的研究也表明,在基于优化的操作里加上接触力调节与柔顺性,鲁棒性比开环执行轨迹要好 [5]。</p>
+    <p>Pure analytical control assumes that</p>
+    <div class="eq compact"><div class="eq-body">$$J_h,\quad A,\quad H$$</div></div>
+    <p>accurately describe the real system.</p>
+    <p>This assumption is difficult to satisfy for a dexterous hand holding tweezers.</p>
+    <p>Errors arise from:</p>
+    <ul>
+      <li>imperfect finger calibration,</li>
+      <li>soft fingertip deformation,</li>
+      <li>changing contact locations,</li>
+      <li>tendon transmission error,</li>
+      <li>small amounts of slip,</li>
+      <li>compliance of the tweezers,</li>
+      <li>uncertainty in the initial grasp.</li>
+    </ul>
+    <p>For this reason, the proposed controller closes the feedback loop directly around the quantity that matters:</p>
+    <div class="eq"><div class="eq-body">$$\boxed{x_{tip}}.$$</div></div>
+    <p>An external camera, stereo camera, optical tracker, or marker-based system estimates</p>
+    <div class="eq compact"><div class="eq-body">$$\hat x_{tip}.$$</div></div>
+    <p>The visual system does <strong class="m-ink">not</strong> replace the analytical controller.</p>
+    <p>Instead, it provides the error term in Eq. (4):</p>
+    <div class="eq compact"><div class="eq-body">$$e_x=x_d-\hat x_{tip}.$$</div></div>
+    <p>Consequently, even if the analytical model predicts an imperfect joint motion, the next control cycle observes the remaining Cartesian error and corrects it.</p>
+    <p>The architecture therefore becomes</p>
+    <div class="eq"><div class="eq-body">$$x_d
+\rightarrow
+e_x
+\rightarrow
+\text{Cartesian controller}
+\rightarrow
+\text{model-based QP}
+\rightarrow
+\dot q
+\rightarrow
+\text{hand/tool}$$</div></div>
+    <p>with</p>
+    <div class="eq compact"><div class="eq-body">$$\hat x_{tip}$$</div></div>
+    <p>fed back from vision.</p>
+    <p>Multifinger visual-servoing experiments have previously shown that object-level visual feedback can be combined with kinematic hand models for closed-loop Cartesian manipulation.</p>
+    <figure class="plate">
+      <img src="assets/images/fig_loop.jpg" alt="Vision closes the control loop on the tool tip" loading="lazy">
+      <figcaption><span class="fig-no">03</span>Vision closes the control loop on the tool tip</figcaption>
+    </figure>
+    <p>For precision tweezers manipulation this is particularly useful because measuring the tool tip directly avoids requiring perfect estimation of every finger–tool contact state.</p>
+    <div class="rule" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
   </div>
 </section>
 <section class="sec" id="s08">
   <div class="sec-head">
     <span class="sec-num c-yellow">08</span>
-    <h2>完整架构:三个角色被刻意分开</h2>
+    <h2>VII. Tactile and Grasp-Force Control</h2>
   </div>
   <div class="sec-body">
-    <p>整个系统包含三层嵌套的功能。</p>
-    <p><strong class="m-ink">工具空间控制。</strong> 视觉测量 $x_{\mathrm{tip}}$,笛卡尔误差 $e_x=x_d-x_{\mathrm{tip}}$,期望工具速度 $v_x^*=K_pe_x$。</p>
-    <p><strong class="m-ink">基于模型的手部协调。</strong> 解析模型通过式 (5) 的 QP 求解 $J_h\dot q=A\nu$ 与 $H\nu\approx v_x^*$,产出协调的手指运动。</p>
-    <p><strong class="m-ink">接触力调节。</strong> 触觉测量 $f_i$,把内抓取力调到 $f_d$,而有意不改变工具运动。</p>
-    <p>三个感知与建模角色是刻意分开的,各自回答一个问题:</p>
-    <div class="eq"><div class="eq-body">$$\text{模型:手指应该怎么动?}$$</div></div>
-    <div class="eq"><div class="eq-body">$$\text{视觉:工具尖端真的到了吗?}$$</div></div>
-    <div class="eq"><div class="eq-body">$$\text{触觉:工具还夹得稳吗?}$$</div></div>
+    <p>Visual feedback controls <strong class="m-ink">where the tweezers go</strong>.</p>
+    <p>It does not guarantee that the fingers maintain a stable grasp.</p>
+    <p>Let the vector of finger contact forces be</p>
+    <div class="eq compact"><div class="eq-body">$$f=
+[f_1^T,\ldots,f_m^T]^T.$$</div></div>
+    <p>The net wrench acting on the tool is</p>
+    <div class="eq compact"><div class="eq-body">$$w=Gf,$$</div></div>
+    <p>where \(G\) is the grasp matrix.</p>
+    <p>Finger joint torques satisfy</p>
+    <div class="eq"><div class="eq-body">$$\boxed{
+\tau=J_h^Tf.
+}$$</div><span class="eq-tag">(6)</span></div>
+    <p>Contact forces can be decomposed into</p>
+    <div class="eq compact"><div class="eq-body">$$f=f_{\mathrm{task}}+f_{\mathrm{int}},$$</div></div>
+    <p>where internal forces satisfy</p>
+    <div class="eq"><div class="eq-body">$$\boxed{
+Gf_{\mathrm{int}}=0.
+}$$</div><span class="eq-tag">(7)</span></div>
+    <p>These forces increase grasp stability without producing net tool motion.</p>
+    <p>Therefore a tactile controller can regulate</p>
+    <div class="eq"><div class="eq-body">$$f_{\mathrm{int}}\rightarrow f_{\mathrm{int}}^d.$$</div></div>
+    <p>For example,</p>
+    <div class="eq compact"><div class="eq-body">$$\tau_f
+=
+J_h^T
+K_f
+(f_d-\hat f).$$</div><span class="eq-tag">(8)</span></div>
+    <p>The complete joint command can conceptually be decomposed as</p>
+    <div class="eq"><div class="eq-body">$$\boxed{
+\tau
+=
+\tau_{\mathrm{motion}}
++
+\tau_{\mathrm{grasp}}.
+}$$</div></div>
+    <p>The motion controller generates the coordinated movement required for tool-tip tracking, while the grasp controller maintains sufficient normal force to prevent slip.</p>
+    <p>Recent tactile in-hand manipulation studies have shown that adding contact-force regulation and compliance to optimization-based manipulation can improve robustness relative to open-loop trajectory execution.</p>
+    <div class="rule" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
   </div>
 </section>
 <section class="sec" id="s09">
   <div class="sec-head">
     <span class="sec-num c-blue">09</span>
-    <h2>二维算例:5 → 4.6 → 4.93 → 4.99 → 5.00</h2>
+    <h2>VIII. Complete Visual–Tactile Control Architecture</h2>
   </div>
   <div class="sec-body">
-    <p>考虑两根平面 2-DOF 手指夹一把刚性工具。关节向量 $q=[q_{11},q_{12},q_{21},q_{22}]^T$,工具的平面状态是 $\xi=[x,y,\theta]^T$。假设两个接触点对称分布:$r_1=(-a,0)^T$、$r_2=(a,0)^T$。工具水平时</p>
-    <div class="eq"><div class="eq-body">$$A=\begin{bmatrix}1&0&0\\0&1&-a\\1&0&0\\0&1&a\end{bmatrix}$$</div></div>
-    <p>接触约束是</p>
-    <div class="eq"><div class="eq-body">$$J_h(q)\dot q=A\dot\xi$$</div><span class="eq-tag">(9)</span></div>
-    <p>假设期望操作是保持姿态不变、把尖端向右平移 5 毫米,即 $\Delta\xi_d=[5,0,0]^T$ 毫米,那么 $A\Delta\xi_d=[5,0,5,0]^T$ 毫米——两个接触点都该向右挪大约 5 毫米。模型先算出一次关节位移:</p>
-    <div class="eq"><div class="eq-body">$$\Delta q=J_h^\dagger A\Delta\xi_d$$</div></div>
-    <p>但模型误差让真实工具只走了 4.6 毫米。相机看到 $x_{\mathrm{measured}}=4.6$ 毫米,残余误差变成</p>
-    <div class="eq"><div class="eq-body">$$e_x=5.0-4.6=0.4~\mathrm{mm}$$</div></div>
-    <p>下一轮指令是 $v_x^*=K_p(0.4)$,于是</p>
-    <div class="eq"><div class="eq-body">$$5\rightarrow4.6\rightarrow4.93\rightarrow4.99\rightarrow5.00~\mathrm{mm}$$</div></div>
-    <p>留意这个序列:<span class="e-r">解析模型根本不需要一次开环就把 5 毫米走准</span>。这就是"解析运动学 + 视觉反馈"最大的好处。与此同时间,触觉环路把法向接触力维持在 $F_{n,1}\approx F_{n,1}^d$、$F_{n,2}\approx F_{n,2}^d$。定位精度和抓取稳定性因此是<mark class="m-y">分开控制</mark>的,互不干扰。</p>
-    <figure class="plate">
-      <img src="assets/images/fig_converge.jpg" alt="二维算例:模型误差被视觉逐轮吃掉" loading="lazy">
-      <figcaption><span class="fig-no">04</span>二维算例:模型误差被视觉逐轮吃掉</figcaption>
-    </figure>
+    <p>The proposed system therefore contains three nested functions.</p>
+    <h3>A. Tool-Space Control</h3>
+    <p>Visual sensing measures</p>
+    <div class="eq compact"><div class="eq-body">$$x_{tip}.$$</div></div>
+    <p>The Cartesian error is</p>
+    <div class="eq compact"><div class="eq-body">$$e_x=x_d-x_{tip}.$$</div></div>
+    <p>The desired tool velocity is</p>
+    <div class="eq compact"><div class="eq-body">$$v_x^*=K_pe_x.$$</div></div>
+    <h3>B. Model-Based Hand Coordination</h3>
+    <p>The analytical model solves</p>
+    <div class="eq compact"><div class="eq-body">$$J_h\dot q=A\nu$$</div></div>
+    <p>and</p>
+    <div class="eq compact"><div class="eq-body">$$H\nu\approx v_x^*$$</div></div>
+    <p>through the QP in Eq. (5).</p>
+    <p>This produces coordinated finger motion.</p>
+    <h3>C. Contact-Force Regulation</h3>
+    <p>Tactile sensing measures</p>
+    <div class="eq compact"><div class="eq-body">$$f_i.$$</div></div>
+    <p>Internal grasp forces are regulated toward</p>
+    <div class="eq compact"><div class="eq-body">$$f_d$$</div></div>
+    <p>without intentionally changing tool motion.</p>
+    <p>The overall architecture is therefore</p>
+    <div class="eq"><div class="eq-body">$$\boxed{
+\begin{array}{ccc}
+&&x_d\\
+&&\downarrow\\
+\text{Vision}
+&\rightarrow&
+\text{Tool-Space Error Controller}
+\\
+&&\downarrow\\
+&&
+\text{Analytical Hand–Tool Model}
+\\
+&&\downarrow\\
+&&
+\text{QP Inverse Kinematics}
+\\
+&&\downarrow\\
+\text{Tactile Feedback}
+&\rightarrow&
+\text{Finger Control}
+\\
+&&\downarrow\\
+&&
+\text{Tweezers}
+\end{array}}$$</div></div>
+    <p>The three sensing/modeling roles are intentionally separated:</p>
+    <div class="eq"><div class="eq-body">$$\boxed{
+\text{Model: how should the fingers move?}
+}$$</div></div>
+    <div class="eq"><div class="eq-body">$$\boxed{
+\text{Vision: did the tool tip actually arrive?}
+}$$</div></div>
+    <div class="eq"><div class="eq-body">$$\boxed{
+\text{Tactile: is the tool still securely grasped?}
+}$$</div></div>
+    <div class="rule" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
   </div>
 </section>
 <section class="sec" id="s10">
   <div class="sec-head">
     <span class="sec-num c-red">10</span>
-    <h2>可选扩展:让雅可比在线自适应</h2>
+    <h2>IX. Simplified Two-Dimensional Example</h2>
   </div>
   <div class="sec-body">
-    <p>一个可选的扩展,是让解析任务雅可比自己去适应系统性的模型误差。最近有纯在掌写字的工作表明,完整的手—物任务雅可比可以直接在线估计,不需要解析接触模型;那套物理系统的面内跟踪误差平均约 <span class="e-o">0.6 毫米</span>,而笔的运动完全由手指关节产生 [6]。</p>
-    <p>这提示了一条介于"纯解析建模"和"端到端学习"之间的中间路线。设 $J_a$ 是解析任务雅可比,引入修正 $\Delta J$,则</p>
-    <div class="eq"><div class="eq-body">$$J_{\mathrm{effective}}=J_a+\Delta J$$</div><span class="eq-tag">(10)</span></div>
-    <p>解析模型提供初始结构,观测到的工具运动去更新 $\Delta J$——比如用 $\Delta x_k=J_k\Delta q_k$ 递推更新 $J_k$。这样既保留了物理结构,又能补偿接触不确定性。当同一只手反复操作同一类镊子时,这条路尤其值得走。</p>
+    <p>Consider two planar 2-DOF fingers holding a rigid tool.</p>
+    <p>Let</p>
+    <div class="eq compact"><div class="eq-body">$$q=
+[q_{11},q_{12},q_{21},q_{22}]^T.$$</div></div>
+    <p>The planar tool state is</p>
+    <div class="eq compact"><div class="eq-body">$$\xi=
+[x,y,\theta]^T.$$</div></div>
+    <p>Assume the two contacts are positioned symmetrically at</p>
+    <div class="eq compact"><div class="eq-body">$$r_1=(-a,0)^T,
+\qquad
+r_2=(a,0)^T.$$</div></div>
+    <p>For a horizontal tool,</p>
+    <div class="eq"><div class="eq-body">$$A=
+\begin{bmatrix}
+1&0&0\\
+0&1&-a\\
+1&0&0\\
+0&1&a
+\end{bmatrix}.$$</div></div>
+    <p>The contact constraint is</p>
+    <div class="eq compact"><div class="eq-body">$$J_h(q)\dot q=A\dot\xi.$$</div><span class="eq-tag">(9)</span></div>
+    <p>Suppose the desired operation is to translate the tweezer tip 5 mm to the right while maintaining orientation:</p>
+    <div class="eq"><div class="eq-body">$$\Delta\xi_d=
+\begin{bmatrix}
+5\\
+0\\
+0
+\end{bmatrix}
+\mathrm{mm}.$$</div></div>
+    <p>Then</p>
+    <div class="eq"><div class="eq-body">$$A\Delta\xi_d
+=
+\begin{bmatrix}
+5\\
+0\\
+5\\
+0
+\end{bmatrix}
+\mathrm{mm}.$$</div></div>
+    <p>Therefore both contacts should move approximately 5 mm to the right.</p>
+    <p>The model computes an initial joint displacement:</p>
+    <div class="eq compact"><div class="eq-body">$$\Delta q
+=
+J_h^\dagger A\Delta\xi_d.$$</div></div>
+    <p>Suppose model error causes the real tool to move only</p>
+    <div class="eq compact"><div class="eq-body">$$4.6~\mathrm{mm}.$$</div></div>
+    <p>The camera observes</p>
+    <div class="eq compact"><div class="eq-body">$$x_{\mathrm{measured}}=4.6~\mathrm{mm}.$$</div></div>
+    <p>The residual error becomes</p>
+    <div class="eq compact"><div class="eq-body">$$e_x=5.0-4.6=0.4~\mathrm{mm}.$$</div></div>
+    <p>The next iteration commands</p>
+    <div class="eq compact"><div class="eq-body">$$v_x^*=K_p(0.4).$$</div></div>
+    <p>The analytical model therefore does not need to produce exactly 5 mm in a single open-loop command.</p>
+    <p>Instead,</p>
+    <div class="eq"><div class="eq-body">$$5
+\rightarrow
+4.6
+\rightarrow
+4.93
+\rightarrow
+4.99
+\rightarrow
+5.00~\mathrm{mm}.$$</div></div>
+    <p>This is the principal benefit of combining analytical kinematics with visual feedback.</p>
+    <figure class="plate">
+      <img src="assets/images/fig_converge.jpg" alt="Model error eaten away by the visual loop" loading="lazy">
+      <figcaption><span class="fig-no">04</span>Model error eaten away by the visual loop</figcaption>
+    </figure>
+    <p>At the same time, the tactile loop maintains approximately constant normal contact force:</p>
+    <div class="eq compact"><div class="eq-body">$$F_{n,1}\approx F_{n,1}^d,$$</div></div>
+    <div class="eq compact"><div class="eq-body">$$F_{n,2}\approx F_{n,2}^d.$$</div></div>
+    <p>Thus positioning accuracy and grasp stability are controlled independently.</p>
+    <div class="rule" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
   </div>
 </section>
 <section class="sec" id="s11">
   <div class="sec-head">
     <span class="sec-num c-yellow">11</span>
-    <h2>实验设计与消融实验</h2>
+    <h2>X. Online Jacobian Adaptation</h2>
   </div>
   <div class="sec-body">
-    <p>实验平台大致需要:多自由度灵巧手、固定的机械腕、关节编码器、指尖触觉或力传感器、一把普通镊子,以及一套外部光学追踪或视觉系统。流程是机械臂先把灵巧手送到操作区域附近,然后锁死,后续所有精细运动都交给手。</p>
-    <p><strong class="m-ink">点对点运动。</strong> 第一组基准是六个笛卡尔目标:$(+5,0,0)$、$(-5,0,0)$、$(0,+5,0)$、$(0,-5,0)$、$(0,0,+5)$、$(0,0,-5)$ 毫米,姿态保持常数,一个代表性要求是</p>
-    <div class="eq"><div class="eq-body">$$|\Delta\theta|<0.5^\circ$$</div></div>
-    <p><strong class="m-ink">轨迹跟踪。</strong> 让尖端依次跟踪直线、半径 5 毫米的圆、方形、八字和三维螺旋。</p>
-    <p><strong class="m-ink">镊子操作。</strong> 最后一组实验同时控制位姿和开合,状态是 $x=[p_x,p_y,p_z,\phi_x,\phi_y,\phi_z,d]$:手先移向一个小目标,再缩小 $d$ 把它夹住。这组检验的是"工具平移"和"功能性动作"能不能同时做。</p>
-    <p>不过最值得做的还是消融——比较四个控制器:</p>
-    <p>1. <strong class="m-ink">A:只用解析模型</strong>,开环执行。 2. <strong class="m-ink">B:解析模型 + 视觉</strong>,加上视觉伺服。 3. <strong class="m-ink">C:解析模型 + 视觉 + 触觉</strong>,再加力控。 4. <strong class="m-ink">D:在线任务雅可比</strong>,配视觉反馈。</p>
-    <p>比较时测量尖端 RMSE、最大笛卡尔误差、姿态误差 $e_R$、重复性、接触滑移、力波动和任务成功率。这组实验能直接回答一个科学问题:</p>
-    <blockquote><p>毫米级的在掌灵巧工具操作,到底需要多少物理建模?</p></blockquote>
-    <figure class="plate">
-      <img src="assets/images/fig_ablation.jpg" alt="四种控制器的消融对比" loading="lazy">
-      <figcaption><span class="fig-no">05</span>四种控制器的消融对比</figcaption>
-    </figure>
+    <p>An optional extension is to allow the analytical task Jacobian to adapt to systematic model errors.</p>
+    <p>Recent work on purely in-hand pen writing demonstrated that the complete hand–object task Jacobian can be estimated directly online, without an analytical contact model. The physical system achieved a reported mean in-plane tracking error of approximately 0.6 mm while generating pen motion through finger articulation alone.</p>
+    <p>This suggests an intermediate strategy between pure analytical modeling and end-to-end learning.</p>
+    <p>Let</p>
+    <div class="eq compact"><div class="eq-body">$$J_a$$</div></div>
+    <p>be the analytical task Jacobian.</p>
+    <p>Introduce a correction</p>
+    <div class="eq compact"><div class="eq-body">$$\Delta J.$$</div></div>
+    <p>Then</p>
+    <div class="eq"><div class="eq-body">$$\boxed{
+J_{\mathrm{effective}}
+=
+J_a+\Delta J.
+}$$</div><span class="eq-tag">(10)</span></div>
+    <p>The analytical model provides the initial structure, while observed tool motion updates \(\Delta J\).</p>
+    <p>For example,</p>
+    <div class="eq compact"><div class="eq-body">$$\Delta x_k
+=
+J_k\Delta q_k$$</div></div>
+    <p>can be used to recursively update \(J_k\).</p>
+    <p>This approach preserves physical structure while compensating for contact uncertainty.</p>
+    <p>It may be especially useful when the same hand repeatedly manipulates the same class of tweezers.</p>
+    <div class="rule" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
   </div>
 </section>
 <section class="sec" id="s12">
   <div class="sec-head">
     <span class="sec-num c-blue">12</span>
-    <h2>讨论</h2>
+    <h2>XI. Experimental Evaluation</h2>
   </div>
   <div class="sec-body">
-    <p>传统系统的分工通常是"手→抓、臂→工具运动";这套架构换成了"臂→粗定位、手→局部笛卡尔操作"。灵巧手因此变成一台嵌在机械臂末端的第二台机械手——工作空间可能只有几毫米到几厘米,但这个空间可以拿去换精度。</p>
-    <p>这个概念很像粗/精两级执行器:机械臂给出"大工作空间 + 中等精度",手指给出"小工作空间 + 高精度"。对外科操作、实验室自动化、电子装配这类摆弄小器械的任务,这个区分尤其相关。</p>
-    <p>它还规避掉了一个强要求——解析的手—工具模型不必完美。取而代之的分配是:物理提供结构,视觉提供精度,触觉提供接触鲁棒性。至于接触位置会明显移动的大范围在掌运动,后续可以用带滚动与几何约束的轨迹优化方法把框架拓出去 [4]。</p>
+    <p>A proposed experimental platform consists of:</p>
+    <ul>
+      <li>a multi-DOF dexterous hand,</li>
+      <li>a fixed robot wrist,</li>
+      <li>joint encoders,</li>
+      <li>fingertip tactile or force sensors,</li>
+      <li>a conventional pair of tweezers,</li>
+      <li>an external optical tracking or vision system.</li>
+    </ul>
+    <p>The arm first positions the hand close to the manipulation region.</p>
+    <p>The arm is then locked.</p>
+    <p>The hand performs all subsequent fine motion.</p>
+    <h3>A. Point-to-Point Motion</h3>
+    <p>The first benchmark consists of six Cartesian targets:</p>
+    <div class="eq compact"><div class="eq-body">$$(+5,0,0),$$</div></div>
+    <div class="eq compact"><div class="eq-body">$$(-5,0,0),$$</div></div>
+    <div class="eq compact"><div class="eq-body">$$(0,+5,0),$$</div></div>
+    <div class="eq compact"><div class="eq-body">$$(0,-5,0),$$</div></div>
+    <div class="eq compact"><div class="eq-body">$$(0,0,+5),$$</div></div>
+    <div class="eq compact"><div class="eq-body">$$(0,0,-5)$$</div></div>
+    <p>in millimeters.</p>
+    <p>Orientation should remain constant.</p>
+    <p>A representative requirement is</p>
+    <div class="eq compact"><div class="eq-body">$$|\Delta\theta|<0.5^\circ.$$</div></div>
+    <div class="rule" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+    <h3>B. Trajectory Tracking</h3>
+    <p>The tool tip subsequently tracks:</p>
+    <ul>
+      <li>a line,</li>
+      <li>a 5-mm-radius circle,</li>
+      <li>a square,</li>
+      <li>a figure-eight,</li>
+      <li>a three-dimensional helix.</li>
+    </ul>
+    <div class="rule" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+    <h3>C. Tweezer Operation</h3>
+    <p>The final experiments include simultaneous pose and opening control:</p>
+    <div class="eq compact"><div class="eq-body">$$x=
+[p_x,p_y,p_z,\phi_x,\phi_y,\phi_z,d].$$</div></div>
+    <p>The hand moves toward a small target and then reduces</p>
+    <div class="eq compact"><div class="eq-body">$$d$$</div></div>
+    <p>to grasp it.</p>
+    <p>This evaluates whether tool translation and functional actuation can be performed simultaneously.</p>
+    <div class="rule" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
   </div>
 </section>
 <section class="sec" id="s13">
   <div class="sec-head">
     <span class="sec-num c-red">13</span>
-    <h2>结论</h2>
+    <h2>XII. Ablation Study</h2>
   </div>
   <div class="sec-body">
-    <p>这篇论文提出了一套基于模型的视觉—触觉框架,只用手指运动就实现了对镊子的精密灵巧操作。解析核心是</p>
-    <div class="eq"><div class="eq-body">$$J_h(q)\dot q=A(T_o,\alpha)\nu$$</div></div>
-    <p>配合任务映射</p>
-    <div class="eq"><div class="eq-body">$$\dot x_{\mathrm{tip}}=H(T_o,\alpha)\nu$$</div></div>
-    <p>把期望的尖端运动翻译成协调的手指运动。视觉反馈把控制环直接合在镊子尖端上:</p>
-    <div class="eq"><div class="eq-body">$$v_{\mathrm{tip}}^*=K_p(x_d-x_{\mathrm{tip}})$$</div></div>
-    <p>触觉反馈则独立调节内抓取力:</p>
-    <div class="eq"><div class="eq-body">$$Gf_{\mathrm{int}}=0$$</div></div>
-    <p>最终架构把三件事拼在一起:</p>
-    <div class="eq"><div class="eq-body">$$\text{基于模型的运动规划}+\text{视觉精度}+\text{触觉抓取稳定}$$</div></div>
-    <p>在约 ±5 毫米的目标操作范围内,这个表述避开了完整接触隐式规划的复杂度,同时比纯开环解析控制鲁棒得多。更一般地说,它提示了一条分层操作原则:<span class="e-o">机械臂做粗定位,灵巧手则作为围绕工具尖端的局部高精度机械手</span>。</p>
+    <p>A particularly useful experiment is to compare four controllers.</p>
+    <p><strong class="m-ink">Controller A: Analytical model only</strong></p>
+    <div class="eq compact"><div class="eq-body">$$J_{\mathrm{analytic}}$$</div></div>
+    <p>with open-loop execution.</p>
+    <p><strong class="m-ink">Controller B: Analytical model + vision</strong></p>
+    <div class="eq compact"><div class="eq-body">$$J_{\mathrm{analytic}}
++
+\text{visual servo}.$$</div></div>
+    <p><strong class="m-ink">Controller C: Analytical model + vision + tactile control</strong></p>
+    <div class="eq"><div class="eq-body">$$J_{\mathrm{analytic}}
++
+\text{visual servo}
++
+\text{force control}.$$</div></div>
+    <p><strong class="m-ink">Controller D: Online task Jacobian</strong></p>
+    <div class="eq compact"><div class="eq-body">$$J_{\mathrm{online}}$$</div></div>
+    <p>with visual feedback.</p>
+    <p>The comparison should measure</p>
+    <div class="eq compact"><div class="eq-body">$$RMSE_{tip},$$</div></div>
+    <p>maximum Cartesian error,</p>
+    <div class="eq compact"><div class="eq-body">$$e_R,$$</div></div>
+    <p>repeatability,</p>
+    <p>contact slip,</p>
+    <p>force variation,</p>
+    <p>and task success rate.</p>
+    <p>This experiment would directly answer an important scientific question:</p>
+    <blockquote><p>How much physical modeling is actually necessary for millimeter-scale intrinsic dexterous tool manipulation?</p></blockquote>
+    <figure class="plate">
+      <img src="assets/images/fig_ablation.jpg" alt="Ablation: four controllers compared" loading="lazy">
+      <figcaption><span class="fig-no">05</span>Ablation: four controllers compared</figcaption>
+    </figure>
+    <div class="rule" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
   </div>
 </section>
 <section class="sec" id="s14">
   <div class="sec-head">
     <span class="sec-num c-yellow">14</span>
-    <h2>参考文献</h2>
+    <h2>XIII. Discussion</h2>
   </div>
   <div class="sec-body">
-    <p class="ref">[1] A. Cole, J. Hauser, and S. Sastry, "Kinematics and Control of Multifingered Hands with Rolling Contact," <em>IEEE Transactions on Automatic Control</em>, vol. 34, no. 4, pp. 398–404, 1989. DOI: 10.1109/9.28014.</p>
-    <p class="ref">[2] T. Senoo, D. Yoneyama, A. Namiki, and M. Ishikawa, "Tweezers Manipulation Using High-Speed Visual Servoing Based on Contact Analysis," <em>IEEE International Conference on Robotics and Biomimetics</em>, pp. 1936–1941, 2011. DOI: 10.1109/ROBIO.2011.6181574.</p>
-    <p class="ref">[3] M. F. Reis, A. C. Leite, P. J. From, L. Hsu, and F. C. Lizarralde, "Visual Servoing for Object Manipulation with a Multifingered Robot Hand," <em>IFAC-PapersOnLine</em>, vol. 48, no. 19, pp. 1–6, 2015. DOI: 10.1016/j.ifacol.2015.12.001.</p>
-    <p class="ref">[4] F. Yang, T. Power, S. Aguilera Marinovic, S. Iba, R. Soltani Zarrin, and D. Berenson, "Multi-Finger Manipulation via Trajectory Optimization With Differentiable Rolling and Geometric Constraints," <em>IEEE Robotics and Automation Letters</em>, vol. 10, no. 5, 2025. DOI: 10.1109/LRA.2025.3557752.</p>
-    <p class="ref">[5] H. Lee, Y. Kim, V. M. Staven, and C. Sloth, "Trajectory Optimization for In-Hand Manipulation with Tactile Force Control," <em>IEEE/RSJ International Conference on Intelligent Robots and Systems</em>, 2025. DOI: 10.1109/IROS60139.2025.11246500.</p>
-    <p class="ref">[6] K. Stewart, Y. Toshimitsu, and R. K. Katzschmann, "Rapid Learning of Dexterous In-Hand Pen Writing through Real-Time Jacobian Estimation," arXiv:2609.11775, 2026.</p>
+    <p>The proposed architecture differs from conventional tool manipulation in an important way.</p>
+    <p>A conventional system typically uses</p>
+    <div class="eq"><div class="eq-body">$$\text{hand}
+\rightarrow
+\text{grasp},$$</div></div>
+    <div class="eq"><div class="eq-body">$$\text{arm}
+\rightarrow
+\text{tool motion}.$$</div></div>
+    <p>The proposed architecture instead uses</p>
+    <div class="eq"><div class="eq-body">$$\text{arm}
+\rightarrow
+\text{coarse positioning},$$</div></div>
+    <div class="eq"><div class="eq-body">$$\boxed{
+\text{hand}
+\rightarrow
+\text{local Cartesian manipulation}.
+}$$</div></div>
+    <p>The dexterous hand therefore becomes a second manipulator embedded at the end of the robot arm.</p>
+    <p>Its workspace may only be several millimeters or centimeters, but this workspace can be exploited for precision.</p>
+    <p>The concept resembles a coarse/fine actuator system:</p>
+    <div class="eq compact"><div class="eq-body">$$\text{large workspace + moderate precision}$$</div></div>
+    <p>from the arm, combined with</p>
+    <div class="eq compact"><div class="eq-body">$$\text{small workspace + high precision}$$</div></div>
+    <p>from the fingers.</p>
+    <p>This distinction is particularly relevant for surgical manipulation, laboratory automation, electronics assembly, and other tasks involving small instruments.</p>
+    <p>The proposed approach also avoids requiring the analytical hand–tool model to be perfectly accurate.</p>
+    <p>Instead:</p>
+    <div class="eq compact"><div class="eq-body">$$\text{physics}$$</div></div>
+    <p>provides structure,</p>
+    <div class="eq compact"><div class="eq-body">$$\text{vision}$$</div></div>
+    <p>provides accuracy,</p>
+    <p>and</p>
+    <div class="eq compact"><div class="eq-body">$$\text{touch}$$</div></div>
+    <p>provides contact robustness.</p>
+    <p>Trajectory-optimization methods with detailed rolling and geometric constraints could subsequently extend the framework to larger in-hand motions where contact locations must move substantially.</p>
+    <div class="rule" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+  </div>
+</section>
+<section class="sec" id="s15">
+  <div class="sec-head">
+    <span class="sec-num c-blue">15</span>
+    <h2>XIV. Conclusion</h2>
+  </div>
+  <div class="sec-body">
+    <p>This paper proposes a model-based visual–tactile framework for precision dexterous manipulation of tweezers using finger motion alone.</p>
+    <p>The analytical core is</p>
+    <div class="eq"><div class="eq-body">$$\boxed{
+J_h(q)\dot q=A(T_o,\alpha)\nu,
+}$$</div></div>
+    <p>combined with</p>
+    <div class="eq"><div class="eq-body">$$\boxed{
+\dot x_{tip}=H(T_o,\alpha)\nu.
+}$$</div></div>
+    <p>This model converts desired tool-tip motion into coordinated finger motion.</p>
+    <p>Visual feedback closes the control loop directly around the tweezer tip:</p>
+    <div class="eq"><div class="eq-body">$$\boxed{
+v_{tip}^*
+=
+K_p(x_d-x_{tip}).
+}$$</div></div>
+    <p>Tactile feedback independently regulates internal grasp forces:</p>
+    <div class="eq"><div class="eq-body">$$\boxed{
+Gf_{\mathrm{int}}=0.
+}$$</div></div>
+    <p>The resulting architecture therefore combines</p>
+    <div class="eq"><div class="eq-body">$$\boxed{
+\text{model-based motion planning}
++
+\text{visual precision}
++
+\text{tactile grasp stability}.
+}$$</div></div>
+    <p>For a target manipulation range of approximately ±5 mm, this formulation avoids the complexity of full contact-implicit planning while remaining substantially more robust than purely open-loop analytical control.</p>
+    <p>More broadly, the approach suggests a hierarchical manipulation principle in which the robot arm performs gross positioning while the dexterous hand acts as a local, high-precision manipulator around the tool tip.</p>
+    <div class="rule" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+  </div>
+</section>
+<section class="sec" id="s16">
+  <div class="sec-head">
+    <span class="sec-num c-red">16</span>
+    <h2>References</h2>
+  </div>
+  <div class="sec-body">
+    <p class="ref">[1] A. Cole, J. Hauser, and S. Sastry, “Kinematics and Control of Multifingered Hands with Rolling Contact,” <em>IEEE Transactions on Automatic Control</em>, vol. 34, no. 4, pp. 398–404, 1989. DOI: 10.1109/9.28014.</p>
+    <p class="ref">[2] T. Senoo, D. Yoneyama, A. Namiki, and M. Ishikawa, “Tweezers Manipulation Using High-Speed Visual Servoing Based on Contact Analysis,” <em>IEEE International Conference on Robotics and Biomimetics</em>, pp. 1936–1941, 2011. DOI: 10.1109/ROBIO.2011.6181574.</p>
+    <p class="ref">[3] M. F. Reis, A. C. Leite, P. J. From, L. Hsu, and F. C. Lizarralde, “Visual Servoing for Object Manipulation with a Multifingered Robot Hand,” <em>IFAC-PapersOnLine</em>, vol. 48, no. 19, pp. 1–6, 2015. DOI: 10.1016/j.ifacol.2015.12.001.</p>
+    <p class="ref">[4] F. Yang, T. Power, S. Aguilera Marinovic, S. Iba, R. Soltani Zarrin, and D. Berenson, “Multi-Finger Manipulation via Trajectory Optimization With Differentiable Rolling and Geometric Constraints,” <em>IEEE Robotics and Automation Letters</em>, vol. 10, no. 5, 2025. DOI: 10.1109/LRA.2025.3557752.</p>
+    <p class="ref">[5] H. Lee, Y. Kim, V. M. Staven, and C. Sloth, “Trajectory Optimization for In-Hand Manipulation with Tactile Force Control,” <em>IEEE/RSJ International Conference on Intelligent Robots and Systems</em>, 2025. DOI: 10.1109/IROS60139.2025.11246500.</p>
+    <p class="ref">[6] K. Stewart, Y. Toshimitsu, and R. K. Katzschmann, “Rapid Learning of Dexterous In-Hand Pen Writing through Real-Time Jacobian Estimation,” arXiv:2609.11775, 2026.</p>
   </div>
 </section>
 
   <footer class="foot">
     <div class="foot-grid">
       <div>
-        <h4>模型管协调,视觉管准头,触觉管抓稳</h4>
-        <p>Model-Based Visual–Tactile Control for Precision Dexterous In-Hand Tweezer Manipulation<br>
-           中文精读 · 康定斯基/包豪斯排版 · 公式由 KaTeX 渲染</p>
+        <h4>Model-Based Visual–Tactile Control for Precision Dexterous In-Hand Tweezer Manipulation</h4>
+        <p>Model-Based Visual–Tactile Control for Precision Dexterous In-Hand Tweezer Manipulation<br>English text · Kandinsky / Bauhaus typography · Equations rendered with KaTeX</p>
       </div>
       <div class="blocks" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
     </div>
-    <p class="series"><b>系列第 2 篇</b> · 视觉定位 + 触觉抓稳 → 看前作 <a href="https://fangde.github.io/kandinsky-tweezers/">第 1 篇:腕部固定的解析建模</a></p>
+    <p class="series"><b>Part 2 of 2</b> · visual positioning + tactile grasp → read the prequel <a href="https://fangde.github.io/kandinsky-tweezers/">Part 1: Analytical Modelling with a Locked Wrist</a></p>
   </footer>
 </main>
 
-<button class="totop" aria-label="回到顶部">↑</button>
+<button class="totop" aria-label="Back to top">↑</button>
 
 <script>
 (function(){
@@ -730,11 +1244,9 @@ blockquote p{margin:0 !important;color:var(--ink);font-weight:700;
     var io=new IntersectionObserver(function(es){
       es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target);} });
     },{rootMargin:'0px 0px -6% 0px',threshold:0.06});
-
     document.querySelectorAll('.sec, .plate, .eq, blockquote').forEach(function(el){
       el.classList.add('rv'); io.observe(el);
     });
-
     var links=[].slice.call(document.querySelectorAll('.nav a'));
     var io2=new IntersectionObserver(function(es){
       es.forEach(function(e){
@@ -747,7 +1259,7 @@ blockquote p{margin:0 !important;color:var(--ink);font-weight:700;
     document.querySelectorAll('.sec').forEach(function(s){io2.observe(s);});
   }
 
-  /* 安全网:任何原因导致揭示动画没跑,2.2s 后一律显示,内容永不丢失 */
+  /* safety net: if the reveal never fires, show everything anyway */
   setTimeout(function(){
     document.querySelectorAll('.rv:not(.in)').forEach(function(el){el.classList.add('in');});
   },2200);

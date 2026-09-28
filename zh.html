@@ -1,0 +1,796 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>模型管协调,视觉管准头,触觉管抓稳 · 康定斯基排版</title>
+<meta name="description" content="解析运动学负责手指怎么动,视觉闭环纠正镊子尖端的位置误差,触觉单独调节内抓取力。三个角色分开,而不是交给端到端学习。">
+<meta name="theme-color" content="#F2EEE3">
+<meta property="og:title" content="模型管协调,视觉管准头,触觉管抓稳">
+<meta property="og:description" content="解析运动学负责手指怎么动,视觉闭环纠正镊子尖端的位置误差,触觉单独调节内抓取力。三个角色分开,而不是交给端到端学习。">
+<meta property="og:type" content="article">
+<meta property="og:image" content="https://fangde.github.io/kandinsky-tweezers-vision-touch/assets/images/cover_fig.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23F2EEE3'/%3E%3Ccircle cx='32' cy='32' r='22' fill='%23F0C200'/%3E%3Cpolygon points='50,90 88,90 69,46' fill='%23DF3524'/%3E%3Crect x='60' y='10' width='27' height='27' fill='%231D3FA6'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jost:wght@400;500;700;900&family=Noto+Sans+SC:wght@400;500;700;900&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" integrity="sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" integrity="sha384-43gviWU0YVjaDtb/GhzOouOXtZMP/7XUzwPTstBeZFe/+rCMvRwr4yROQP43s0Xk" crossorigin="anonymous"
+        onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'\\[',right:'\\]',display:true},{left:'\\(',right:'\\)',display:false},{left:'$',right:'$',display:false}],throwOnError:false});"></script>
+<style>
+/* ==========================================================================
+   康定斯基 / 包豪斯 构造主义论文页
+   稻纸底 + 炭黑硬边 + 三原色平涂,方角优先,零渐变,零投影
+   ========================================================================== */
+
+:root{
+  --paper:#F2EEE3;
+  --paper-2:#E8E2D3;
+  --ink:#131313;
+  --ink-soft:#3B382E;
+  --muted:#6F6A5B;
+  --red:#DF3524;
+  --yellow:#F0C200;
+  --blue:#1D3FA6;
+  --line:rgba(19,19,19,.16);
+
+  --display:'Jost','Noto Sans SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;
+  --body:'Noto Sans SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;
+  --mono:'SF Mono','IBM Plex Mono',Menlo,Consolas,monospace;
+
+  --measure:44rem;
+  --gutter:clamp(1.25rem,4vw,3rem);
+}
+
+*,*::before,*::after{box-sizing:border-box;}
+
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%;}
+
+body{
+  margin:0;
+  background:var(--paper);
+  color:var(--ink-soft);
+  font-family:var(--body);
+  font-size:clamp(15.5px,1.05vw + 12px,17.5px);
+  line-height:1.85;
+  letter-spacing:.01em;
+  overflow-x:hidden;
+  /* 极细纸纹,不是渐变也不是阴影 */
+  background-image:
+    repeating-linear-gradient(0deg,rgba(19,19,19,.028) 0 1px,transparent 1px 7px),
+    repeating-linear-gradient(90deg,rgba(19,19,19,.022) 0 1px,transparent 1px 7px);
+}
+
+::selection{background:var(--yellow);color:var(--ink);}
+
+/* ---------- 顶部阅读进度:三原色分段 ---------- */
+.progress{position:fixed;inset:0 0 auto 0;height:5px;z-index:60;background:transparent;
+  display:flex;}
+.progress i{flex:1;opacity:.18;transition:opacity .3s;}
+.progress i:nth-child(1){background:var(--red);}
+.progress i:nth-child(2){background:var(--yellow);}
+.progress i:nth-child(3){background:var(--blue);}
+.progress #bar{position:absolute;left:0;top:0;height:100%;width:0;
+  background:var(--ink);transition:width .12s linear;}
+
+/* ---------- 左侧书脊 ---------- */
+.spine{
+  position:fixed;left:0;top:0;bottom:0;width:64px;z-index:40;
+  display:flex;align-items:center;justify-content:center;
+  border-right:2px solid var(--ink);
+  background:var(--paper);
+}
+.spine .spine-txt{
+  transform:rotate(180deg);writing-mode:vertical-rl;
+  font-family:var(--display);font-weight:700;font-size:12px;
+  letter-spacing:.42em;text-transform:uppercase;color:var(--ink);
+  white-space:nowrap;
+}
+.spine .spine-mark{position:absolute;top:22px;left:50%;transform:translateX(-50%);
+  width:20px;height:20px;background:var(--red);}
+.spine .spine-mark.b{top:auto;bottom:22px;background:var(--blue);}
+
+/* ---------- 右侧章节导航 ---------- */
+.nav{position:fixed;right:0;top:0;bottom:0;width:220px;z-index:40;
+  display:flex;align-items:center;padding:0 22px;
+  opacity:0;visibility:hidden;transition:opacity .35s,visibility .35s;}
+.nav.on{opacity:1;visibility:visible;}
+.nav ol{list-style:none;margin:0;padding:0;width:100%;}
+.nav li{margin:0 0 2px;}
+.nav a{display:flex;gap:10px;align-items:baseline;text-decoration:none;
+  padding:4px 6px;border-left:2px solid transparent;transition:border-color .2s;}
+.nav a:hover,.nav a.active{border-left-color:var(--red);background:rgba(240,194,0,.20);}
+.nav-num{font-family:var(--mono);font-size:11px;color:var(--muted);min-width:18px;}
+.nav-txt{font-size:12.5px;color:var(--ink);line-height:1.35;
+  display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:170px;}
+
+/* ---------- 主体骨架 ---------- */
+.shell{
+  max-width:var(--measure);
+  margin:0 auto;
+  padding:0 var(--gutter) 0 calc(var(--gutter) + 64px);
+  position:relative;z-index:10;
+}
+@media (max-width:1180px){
+  .nav{display:none;}
+  .shell{padding-right:var(--gutter);}
+}
+@media (max-width:820px){
+  .spine{display:none;}
+  .shell{padding-left:var(--gutter);}
+}
+
+/* ---------- HERO ---------- */
+.hero{
+  position:relative;min-height:100svh;
+  display:flex;align-items:center;
+  padding:8rem 0 5rem;
+  border-bottom:3px solid var(--ink);
+  overflow:hidden;
+}
+.hero-art{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden;}
+.hero-art .a{position:absolute;display:block;opacity:0;}
+.hero-art.ready .a{animation:haIn .9s cubic-bezier(.2,.8,.25,1) forwards;}
+
+/* 左上:铬黄大圆 */
+.hero-art .a1{width:31vmin;height:31vmin;border-radius:50%;background:var(--yellow);
+  top:-7vmin;left:-8vmin;}
+/* 上带:炭黑长斜线(压在文字区之上) */
+.hero-art .a2{width:128%;height:6px;background:var(--ink);
+  top:5%;left:-14%;transform:rotate(-19deg);}
+/* 右侧:群青方块(出血) */
+.hero-art .a3{width:23vmin;height:23vmin;background:var(--blue);
+  right:-6vmin;top:42%;}
+/* 右上:同心圆 */
+.hero-art .a4b{width:33vmin;height:33vmin;top:3%;right:2%;}
+/* 左下:正红三角 */
+.hero-art .a5{width:25vmin;height:23vmin;background:var(--red);
+  clip-path:polygon(50% 0,0 100%,100% 100%);bottom:-4vmin;left:4vmin;}
+/* 下带:炭黑短斜线(压在文字区之下) */
+.hero-art .a6{width:74%;height:5px;background:var(--ink);
+  bottom:11%;right:-16%;transform:rotate(-13deg);}
+.hero-art .a7{width:9vmin;height:9vmin;background:var(--yellow);right:5%;bottom:5%;}
+.hero-art .a8{width:2.3vmin;height:2.3vmin;border-radius:50%;background:var(--ink);
+  right:15%;bottom:24%;}
+.hero-art .a9{width:1.6vmin;height:1.6vmin;border-radius:50%;background:var(--red);
+  left:6%;top:40%;}
+.hero-art .a10{width:15vmin;height:4px;background:var(--ink);left:-2vmin;top:33%;}
+
+.hero-inner{position:relative;z-index:2;max-width:var(--measure);width:100%;min-width:0;
+  margin:0 auto;padding:0 var(--gutter) 0 calc(var(--gutter) + 64px);}
+@media (max-width:820px){
+  .hero-inner{padding-left:var(--gutter);}
+  .hero h1{font-size:clamp(1.9rem,8.6vw,2.7rem);}
+  .meta li{padding:.5rem .72rem;font-size:11.5px;}
+  .lead{font-size:1rem;}
+  /* 窄屏:削弱图形,保证正文可读 */
+  .hero-art{opacity:.42;}
+  .hero-art .a3{display:none;}
+}
+
+.kicker{
+  font-family:var(--mono);font-size:11.5px;letter-spacing:.30em;
+  text-transform:uppercase;color:var(--ink);margin:0 0 2.2rem;
+  display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+}
+.kicker::before{content:"";width:52px;height:10px;background:var(--ink);display:inline-block;}
+
+.hero h1{
+  font-family:var(--display);
+  font-weight:900;
+  font-size:clamp(2.35rem,6.2vw,4.9rem);
+  line-height:1.06;
+  letter-spacing:-.022em;
+  color:var(--ink);
+  margin:0 0 2rem;
+  text-wrap:balance;
+}
+.hero h1 .w-red{color:var(--red);}
+.hero h1 .w-blue{color:var(--blue);}
+.hero h1 .w-yellow{
+  color:var(--ink);
+  background:linear-gradient(transparent 62%,var(--yellow) 62%);
+  padding:0 .12em;
+}
+.hero h1 .rule-inline{display:inline-block;width:.62em;height:.62em;background:var(--red);
+  margin-left:.14em;vertical-align:baseline;}
+
+.lead{
+  font-size:clamp(1rem,1.5vw,1.16rem);
+  line-height:1.8;color:var(--ink);
+  max-width:38em;margin:0 0 2.6rem;
+  padding-left:1.1rem;border-left:4px solid var(--yellow);
+}
+
+.meta{list-style:none;display:flex;flex-wrap:wrap;gap:0;margin:0;padding:0;
+  border:2px solid var(--ink);width:fit-content;max-width:100%;}
+.meta li{
+  padding:.6rem 1.1rem;font-size:12.5px;color:var(--ink);
+  font-family:var(--mono);letter-spacing:.06em;
+  border-right:2px solid var(--ink);
+}
+.meta li:last-child{border-right:0;}
+.meta li b{font-family:var(--body);font-weight:700;letter-spacing:0;}
+
+/* ---------- 英文长标题的 Hero 字号 ---------- */
+body.lang-en .hero h1{font-size:clamp(1.9rem,4.0vw,3.35rem);
+  letter-spacing:-.028em;line-height:1.07;}
+body.lang-en .hero-inner{max-width:52rem;}
+
+/* ---------- 章节头 ---------- */
+.sec{margin:5.5rem 0 0;}
+.sec-head{
+  display:flex;align-items:flex-start;gap:1.1rem;
+  border-top:3px solid var(--ink);padding-top:1.5rem;margin-bottom:.4rem;
+}
+.sec-num{
+  flex:none;display:grid;place-items:center;
+  width:52px;height:52px;color:var(--paper);
+  font-family:var(--mono);font-weight:700;font-size:17px;
+  letter-spacing:.02em;line-height:1;
+}
+.sec-num.c-red{background:var(--red);}
+.sec-num.c-yellow{background:var(--yellow);color:var(--ink);}
+.sec-num.c-blue{background:var(--blue);}
+.sec h2{
+  font-family:var(--display);font-weight:700;
+  font-size:clamp(1.35rem,2.5vw,1.9rem);line-height:1.25;
+  letter-spacing:-.015em;color:var(--ink);margin:.2rem 0 0;text-wrap:balance;
+}
+.sec-body{padding-top:1.1rem;}
+.sec-body:last-of-type{padding-bottom:0;}
+
+h3{
+  font-family:var(--display);font-weight:700;font-size:1.03rem;
+  color:var(--ink);margin:2.4rem 0 .7rem;letter-spacing:0;
+  padding-bottom:.5rem;border-bottom:1px solid var(--line);
+}
+
+/* ---------- 正文 ---------- */
+.sec-body p{margin:1.05rem 0;text-align:justify;text-justify:inter-ideograph;}
+
+.ref{
+  font-size:.86rem;line-height:1.7;color:var(--muted);
+  padding-left:2.4rem;text-indent:-2.4rem;
+  border-left:2px solid var(--line);
+  padding-top:.15rem;padding-bottom:.15rem;
+  margin:.7rem 0 !important;text-align:left !important;
+}
+
+/* ---------- 行内标色 ---------- */
+.m-ink{color:var(--ink);font-weight:700;
+  background:linear-gradient(transparent 68%,rgba(240,194,0,.65) 68%);}
+.m-y{background:var(--yellow);color:var(--ink);font-weight:700;padding:.06em .28em;}
+.m-b{background:var(--blue);color:var(--paper);font-weight:700;padding:.06em .28em;}
+.m-r{background:var(--red);color:var(--paper);font-weight:700;padding:.06em .28em;}
+.m-g{background:var(--paper-2);color:var(--ink);font-weight:700;padding:.06em .3em;
+  border-bottom:2px solid var(--ink);}
+.e-r{color:var(--red);font-weight:700;}
+.e-b{color:var(--blue);font-weight:700;}
+.e-o{color:#B3271A;font-weight:700;}
+em{font-style:italic;color:var(--muted);}
+
+/* ---------- 引用 ---------- */
+blockquote{
+  margin:2.1rem 0;padding:1.35rem 1.55rem;
+  background:var(--yellow);border-left:4px solid var(--ink);
+}
+blockquote p{margin:0 !important;color:var(--ink);font-weight:700;
+  font-size:1.04rem;line-height:1.7;text-align:left !important;}
+
+/* ---------- 公式 ---------- */
+.eq{
+  display:flex;align-items:center;gap:1rem;
+  margin:1.7rem 0;padding:1.05rem 1.1rem 1.05rem 1.2rem;
+  background:var(--paper-2);
+  border-left:4px solid var(--blue);
+  overflow-x:auto;-webkit-overflow-scrolling:touch;
+}
+.eq:nth-of-type(even){border-left-color:var(--red);}
+.eq-body{flex:1;min-width:0;}
+.eq .katex-display{margin:0;}
+.eq .katex{font-size:1.06em;}
+.eq-tag{flex:none;font-family:var(--mono);font-size:12.5px;color:var(--muted);
+  align-self:center;}
+
+/* ---------- 图版 ---------- */
+.plate{margin:2.8rem 0;position:relative;}
+.plate img{
+  display:block;width:100%;height:auto;
+  border:3px solid var(--ink);
+  background:var(--paper-2);
+}
+.plate figcaption{
+  display:flex;gap:.7rem;align-items:baseline;
+  margin-top:.85rem;font-family:var(--mono);font-size:11.5px;
+  letter-spacing:.10em;text-transform:uppercase;color:var(--muted);
+}
+.fig-no{
+  flex:none;background:var(--ink);color:var(--paper);
+  padding:.18rem .45rem;font-size:10.5px;letter-spacing:.06em;
+}
+
+/* 桌面端让图版冲出正文栏 */
+@media (min-width:1180px){
+  .plate{margin-left:calc(-1 * clamp(0px,6vw,110px));
+         margin-right:calc(-1 * clamp(0px,6vw,110px));}
+}
+
+/* ---------- 页脚 ---------- */
+.foot{
+  margin-top:7rem;border-top:3px solid var(--ink);
+  padding:2.6rem 0 5rem;
+}
+.foot-grid{display:flex;flex-wrap:wrap;gap:1.4rem 3rem;align-items:flex-end;
+  justify-content:space-between;}
+.foot h4{font-family:var(--display);font-weight:900;font-size:1.1rem;
+  margin:0 0 .5rem;color:var(--ink);letter-spacing:-.01em;}
+.foot p{font-size:12.5px;color:var(--muted);margin:0;font-family:var(--mono);
+  letter-spacing:.04em;line-height:1.7;}
+.foot .blocks{display:flex;gap:6px;}
+.foot .blocks i{width:26px;height:26px;display:block;}
+.foot .blocks i:nth-child(1){background:var(--red);}
+.foot .blocks i:nth-child(2){background:var(--yellow);}
+.foot .blocks i:nth-child(3){background:var(--blue);}
+.foot .blocks i:nth-child(4){background:var(--ink);}
+
+
+/* ---------- 系列互链 ---------- */
+.foot .series{margin:1.9rem 0 0;padding-top:1.25rem;border-top:1px solid var(--line);
+  font-family:var(--mono);font-size:12px;line-height:1.9;color:var(--muted);letter-spacing:.03em;}
+.foot .series a{color:var(--ink);text-decoration:none;
+  border-bottom:2px solid var(--yellow);padding-bottom:1px;}
+.foot .series a:hover{border-bottom-color:var(--red);}
+
+/* ---------- 列表 ---------- */
+.sec-body ul,.sec-body ol{margin:1.15rem 0;padding-left:0;list-style:none;}
+.sec-body li{margin:.45rem 0;line-height:1.8;position:relative;padding-left:1.75rem;}
+.sec-body ul>li::before{content:"";position:absolute;left:.15rem;top:.62em;
+  width:8px;height:8px;background:var(--red);}
+.sec-body ol{counter-reset:li;}
+.sec-body ol>li{counter-increment:li;padding-left:2.4rem;}
+.sec-body ol>li::before{content:counter(li,decimal-leading-zero);position:absolute;
+  left:0;top:.1em;font-family:var(--mono);font-size:11px;color:var(--paper);
+  background:var(--ink);padding:.2rem .36rem;letter-spacing:.04em;line-height:1;}
+
+/* ---------- 分节符:三原色硬条 ---------- */
+.rule{display:flex;gap:8px;margin:3.2rem 0;}
+.rule i{height:4px;flex:1;display:block;}
+.rule i:nth-child(1){background:var(--red);}
+.rule i:nth-child(2){background:var(--yellow);}
+.rule i:nth-child(3){background:var(--blue);}
+.rule i:nth-child(4){background:var(--ink);flex:2.4;}
+
+/* ---------- 单行 / 单符号公式的紧凑处理 ---------- */
+.eq.compact{padding:.6rem 1rem;border-left-width:3px;background:transparent;
+  border-left-color:var(--ink);}
+.eq.compact .katex{font-size:.97em;}
+
+/* ---------- 语言切换 ---------- */
+.meta li.lang a{color:var(--ink);text-decoration:none;
+  border-bottom:2px solid var(--yellow);padding-bottom:1px;}
+.meta li.lang a:hover{border-bottom-color:var(--red);}
+
+/* ---------- 回到顶部 ---------- */
+.totop{
+  position:fixed;right:24px;bottom:24px;z-index:50;
+  width:46px;height:46px;border:2px solid var(--ink);background:var(--yellow);
+  color:var(--ink);font-size:17px;cursor:pointer;
+  display:grid;place-items:center;
+  opacity:0;visibility:hidden;transition:opacity .25s,visibility .25s,background .2s;
+  font-family:var(--display);font-weight:700;
+}
+.totop.on{opacity:1;visibility:visible;}
+.totop:hover{background:var(--red);color:var(--paper);}
+@media (max-width:820px){.totop{right:14px;bottom:14px;}}
+
+/* ---------- 滚动揭示 ---------- */
+.rv{opacity:0;transform:translateY(18px);
+  transition:opacity .7s cubic-bezier(.2,.7,.3,1),transform .7s cubic-bezier(.2,.7,.3,1);}
+.rv.in{opacity:1;transform:none;}
+
+/* ---------- hero 图形入场 ---------- */
+.hero-art .ha{opacity:0;transform-box:fill-box;transform-origin:center;}
+.hero-art.ready .ha{animation:haIn .95s cubic-bezier(.2,.8,.25,1) forwards;}
+@keyframes haIn{
+  from{opacity:0;transform:translateY(26px) scale(.94);}
+  to{opacity:1;transform:none;}
+}
+
+@media (prefers-reduced-motion:reduce){
+  .rv,.hero-art .a{opacity:1!important;transform:none!important;animation:none!important;}
+  html{scroll-behavior:auto;}
+}
+
+/* ---------- 打印 ---------- */
+@media print{
+  .spine,.nav,.progress,.totop{display:none!important;}
+  .shell,.hero-inner{padding-left:0;}
+  .hero{min-height:auto;}
+  body{background:#fff;}
+}
+
+</style>
+</head>
+<body class="lang-zh">
+
+<div class="progress" aria-hidden="true">
+  <i></i><i></i><i></i>
+  <span id="bar"></span>
+</div>
+
+<aside class="spine" aria-hidden="true">
+  <span class="spine-mark"></span>
+  <span class="spine-txt">Dexterous In-Hand Manipulation</span>
+  <span class="spine-mark b"></span>
+</aside>
+
+<nav class="nav" aria-label="Section navigation">
+  <ol>
+    <li><a href="#s01"><span class="nav-num">01</span><span class="nav-txt">三个角色,各管一段</span></a></li>
+    <li><a href="#s02"><span class="nav-num">02</span><span class="nav-txt">系统定义</span></a></li>
+    <li><a href="#s03"><span class="nav-num">03</span><span class="nav-txt">手指与工具之间那层约束</span></a></li>
+    <li><a href="#s04"><span class="nav-num">04</span><span class="nav-txt">任务定义在镊子尖端上</span></a></li>
+    <li><a href="#s05"><span class="nav-num">05</span><span class="nav-txt">控制器:先用解析模型把手指协调起来</span></a></li>
+    <li><a href="#s06"><span class="nav-num">06</span><span class="nav-txt">视觉:别指望模型完全准</span></a></li>
+    <li><a href="#s07"><span class="nav-num">07</span><span class="nav-txt">触觉:视觉管去哪,触觉管夹没夹稳</span></a></li>
+    <li><a href="#s08"><span class="nav-num">08</span><span class="nav-txt">完整架构:三个角色被刻意分开</span></a></li>
+    <li><a href="#s09"><span class="nav-num">09</span><span class="nav-txt">二维算例:5 → 4.6 → 4.93 → 4.99 → 5.00</span></a></li>
+    <li><a href="#s10"><span class="nav-num">10</span><span class="nav-txt">可选扩展:让雅可比在线自适应</span></a></li>
+    <li><a href="#s11"><span class="nav-num">11</span><span class="nav-txt">实验设计与消融实验</span></a></li>
+    <li><a href="#s12"><span class="nav-num">12</span><span class="nav-txt">讨论</span></a></li>
+    <li><a href="#s13"><span class="nav-num">13</span><span class="nav-txt">结论</span></a></li>
+    <li><a href="#s14"><span class="nav-num">14</span><span class="nav-txt">参考文献</span></a></li>
+  </ol>
+</nav>
+
+<header class="hero">
+  <div class="hero-art" aria-hidden="true">
+    <span class="a a1"  style="animation-delay:.05s"></span>
+    <span class="a a2"  style="animation-delay:.22s"></span>
+    <span class="a a3"  style="animation-delay:.36s"></span>
+    <svg class="a a4b" style="animation-delay:.46s" viewBox="0 0 200 200" fill="none"
+         stroke="#131313" stroke-width="1.6" aria-hidden="true">
+      <circle cx="100" cy="100" r="32"/><circle cx="100" cy="100" r="56"/>
+      <circle cx="100" cy="100" r="76"/><circle cx="100" cy="100" r="96"/>
+    </svg>
+    <span class="a a5"  style="animation-delay:.56s"></span>
+    <span class="a a6"  style="animation-delay:.62s"></span>
+    <span class="a a7"  style="animation-delay:.72s"></span>
+    <span class="a a8"  style="animation-delay:.78s"></span>
+    <span class="a a9"  style="animation-delay:.82s"></span>
+    <span class="a a10" style="animation-delay:.86s"></span>
+  </div>
+
+  <div class="hero-inner">
+    <p class="kicker">论文精读 · 灵巧手在掌操作</p>
+    <h1>模型管协调,<br>视觉管<span class="w-red">准头</span>,<br>触觉管<span class="w-yellow">抓稳</span></h1>
+    <p class="lead">解析运动学负责手指怎么动,视觉闭环纠正镊子尖端的位置误差,触觉单独调节内抓取力。三个角色分开,而不是交给端到端学习。</p>
+    <ul class="meta">
+      <li><b>康定斯基排版</b></li>
+      <li>包豪斯三原色</li>
+      <li>约 13 分钟</li>
+      <li>公式 <b>39</b> 组</li>
+      <li class="lang"><a href="index.html">EN</a></li>
+    </ul>
+  </div>
+</header>
+
+<main class="shell">
+    <blockquote><p>解析运动学负责手指怎么动,视觉闭环纠正镊子尖端的位置误差,触觉单独调节内抓取力。三个角色分开,而不是交给端到端学习——这是上篇腕部固定框架的续作。</p></blockquote>
+<section class="sec" id="s01">
+  <div class="sec-head">
+    <span class="sec-num c-red">01</span>
+    <h2>三个角色,各管一段</h2>
+  </div>
+  <div class="sec-body">
+    <p>灵巧手的内部自由度比普通夹爪多得多。但在大多数机器人用工具的系统里,这些自由度只用来"抓稳"——工具一旦被抓住,它在空间里怎么走,基本都交给机械臂了。</p>
+    <p>人的精细操作不是这样。写字、用镊子、扎针、做精细装配的时候,腕子几乎不动,手就能让工具尖端准确地挪动几毫米。</p>
+    <p>于是有了另一种分工:</p>
+    <div class="eq"><div class="eq-body">$$\text{机械臂}\rightarrow\text{粗定位}$$</div></div>
+    <div class="eq"><div class="eq-body">$$\text{灵巧手}\rightarrow\text{精定位}$$</div></div>
+    <p>这篇工作要研究的就是 <strong class="m-ink">fixed-wrist 灵巧工具操作</strong>:所有局部运动都由手指关节产生。具体任务是——</p>
+    <blockquote><p>灵巧手攥着一把镊子,机械腕完全固定,靠手指的协同运动,把镊子尖端在约 ±5 毫米的局部笛卡尔工作空间里挪动。</p></blockquote>
+    <p>目标不是"把手指动起来",而是<strong class="m-ink">直接控制工具尖端的笛卡尔状态</strong>。</p>
+    <p>经典多指操作研究早就建立了手指运动学、接触约束、物体运动与抓取力之间的解析关系,Cole、Hauser 和 Sastry 就给出了带滚动接触与摩擦约束的多指操作运动学与控制 [1]。真拿镊子做操作也有人做过:Senoo 等人分析手指与镊子的接触,接上高速视觉伺服,在二维和三维实验里用镊子夹小物体 [2]。之后视觉伺服又被用来控制多指手所握物体的笛卡尔位置,用视觉信息抑制扰动、把控制环合在物体层面 [3]。更近的工作则在研究多指操作的可微滚动接触模型与轨迹优化 [4],以及用触觉力调节来提升接触变化下的鲁棒性 [5]。</p>
+    <p>和"要么全靠一个精确的解析模型、要么干脆整个换成强化学习"这两条路都不同,这篇提的是一个混合方案:</p>
+    <div class="eq compact"><div class="eq-body">$$\text{解析运动学}+\text{视觉误差纠正}+\text{触觉力调节}$$</div></div>
+    <p><mark class="m-y">解析模型负责快速、可解释的运动协调;视觉补掉手—工具模型的误差;触觉负责调抓取力、并且发现接触退化</mark>。三者各干各的,谁也不越界。</p>
+    <figure class="plate">
+      <img src="assets/images/fig_roles.jpg" alt="三个角色:模型、视觉、触觉" loading="lazy">
+      <figcaption><span class="fig-no">01</span>三个角色:模型、视觉、触觉</figcaption>
+    </figure>
+  </div>
+</section>
+<section class="sec" id="s02">
+  <div class="sec-head">
+    <span class="sec-num c-yellow">02</span>
+    <h2>系统定义</h2>
+  </div>
+  <div class="sec-body">
+    <p>设灵巧手有 n 个主动手指关节,关节构型记为</p>
+    <div class="eq compact"><div class="eq-body">$$q\in\mathbb{R}^{n}$$</div></div>
+    <p>精细操作期间假定腕子固定:</p>
+    <div class="eq compact"><div class="eq-body">$$\dot q_{\mathrm{arm}}=0$$</div></div>
+    <p>镊子被拆成两部分:六维刚体位姿,加上一个描述开合的内部自由度。刚体位姿是</p>
+    <div class="eq"><div class="eq-body">$$T_o=\begin{bmatrix}R_o&p_o\\0&1\end{bmatrix}\in SE(3)$$</div></div>
+    <p>它的空间速度是 $V_o=[v_o;\ \omega_o]$。再用 α 表示镊子的开合状态,于是工具的广义速度是</p>
+    <div class="eq"><div class="eq-body">$$\nu=\begin{bmatrix}V_o\\\dot\alpha\end{bmatrix}\in\mathbb{R}^{7}$$</div></div>
+  </div>
+</section>
+<section class="sec" id="s03">
+  <div class="sec-head">
+    <span class="sec-num c-blue">03</span>
+    <h2>手指与工具之间那层约束</h2>
+  </div>
+  <div class="sec-body">
+    <p>假设有 m 根手指与工具保持接触。对第 i 根手指,$p_i=f_i(q_i)$,它产生的接触点速度是 $\dot p_i=J_i(q_i)\dot q_i$。把所有手指叠起来:</p>
+    <div class="eq"><div class="eq-body">$$v_c=J_h(q)\dot q,\qquad J_h=\operatorname{diag}(J_1,\ldots,J_m)$$</div></div>
+    <p>也就是</p>
+    <div class="eq compact"><div class="eq-body">$$v_c=J_h(q)\dot q$$</div><span class="eq-tag">(1)</span></div>
+    <p>再把接触点 i 在工具坐标系里的位置记为 $r_i(\alpha)$,它的世界位置是 $p_{c_i}=p_o+R_or_i(\alpha)$。求导得</p>
+    <div class="eq"><div class="eq-body">$$\dot p_{c_i}=v_o+\omega_o\times R_or_i+R_o\frac{\partial r_i}{\partial\alpha}\dot\alpha$$</div></div>
+    <p>写成紧凑形式就是 $\dot p_{c_i}=A_i(T_o,\alpha)\nu$;把所有接触叠起来得到 $v_c=A(T_o,\alpha)\nu$。假设接触保持局部粘滞,就得到</p>
+    <div class="eq compact"><div class="eq-body">$$J_h(q)\dot q=A(T_o,\alpha)\nu$$</div><span class="eq-tag">(2)</span></div>
+    <p>式 (2) 构成了核心解析模型。它表达的关系是</p>
+    <div class="eq"><div class="eq-body">$$\text{手指关节}\rightarrow\text{接触点运动}\rightarrow\text{工具运动}$$</div></div>
+  </div>
+</section>
+<section class="sec" id="s04">
+  <div class="sec-head">
+    <span class="sec-num c-red">04</span>
+    <h2>任务定义在镊子尖端上</h2>
+  </div>
+  <div class="sec-body">
+    <p>真正要操作的不是手指接触点,而是镊子尖端。设 $p_t$ 是两个尖端的中点,期望的笛卡尔任务可以表示成</p>
+    <div class="eq"><div class="eq-body">$$x=\begin{bmatrix}p_t\\\phi_o\end{bmatrix}\in\mathbb{R}^{6}$$</div></div>
+    <p>其中 $p_t$ 是尖端位置,$\phi_o$ 是工具朝向。如果开合量也要控,就变成</p>
+    <div class="eq"><div class="eq-body">$$x=\begin{bmatrix}p_t\\\phi_o\\d\end{bmatrix}\in\mathbb{R}^{7},\qquad d=\|p_t^+-p_t^-\|$$</div></div>
+    <p>尖端速度与工具广义速度通过下面这条式子联系起来:</p>
+    <div class="eq compact"><div class="eq-body">$$\dot x=H(T_o,\alpha)\nu$$</div><span class="eq-tag">(3)</span></div>
+    <p>式 (2) 和式 (3) 合起来,给出了一条完整的解析链:</p>
+    <div class="eq"><div class="eq-body">$$\dot q\rightarrow J_h\rightarrow v_c\rightarrow A\rightarrow\nu\rightarrow H\rightarrow\dot x_{\mathrm{tip}}$$</div></div>
+    <p><mark class="m-y">这条链可以整体看成一个新的「手—工具任务雅可比」</mark>。局部上,$\dot x_{\mathrm{tip}}=J_{\mathrm{task}}\dot q$。和传统机械臂雅可比不一样的是,$J_{\mathrm{task}}$ 同时包含了灵巧手和被抓住的工具——它描述的不是手指去哪,而是<strong class="m-ink">工具尖端去哪</strong>。</p>
+    <figure class="plate">
+      <img src="assets/images/fig_chain.jpg" alt="从关节速度到尖端速度的解析链条" loading="lazy">
+      <figcaption><span class="fig-no">02</span>从关节速度到尖端速度的解析链条</figcaption>
+    </figure>
+  </div>
+</section>
+<section class="sec" id="s05">
+  <div class="sec-head">
+    <span class="sec-num c-yellow">05</span>
+    <h2>控制器:先用解析模型把手指协调起来</h2>
+  </div>
+  <div class="sec-body">
+    <p>设期望的尖端位姿是 $x_d$,实测位姿是 $\hat x$,笛卡尔误差 $e_x=x_d-\hat x$。解算速度控制器给出 $v_x^*=\dot x_d+K_pe_x$;点对点定位时 $\dot x_d=0$,于是</p>
+    <div class="eq compact"><div class="eq-body">$$v_x^*=K_p(x_d-\hat x)$$</div><span class="eq-tag">(4)</span></div>
+    <p>期望的手指速度则通过带约束的优化拿到:</p>
+    <div class="eq"><div class="eq-body">$$\begin{aligned}\min_{\dot q,\nu}\quad&\|H\nu-v_x^*\|_{W_x}^2+\lambda_q\|\dot q\|^2+\lambda_p\|q-q_{\mathrm{nom}}\|^2\\\text{s.t.}\quad&J_h(q)\dot q=A(T_o,\alpha)\nu\\&q_{\min}\le q+\dot q\Delta t\le q_{\max}\\&\dot q_{\min}\le\dot q\le\dot q_{\max}\end{aligned}$$</div><span class="eq-tag">(5)</span></div>
+    <p>这个 QP 在尊重关节限位、维持偏好抓握构型的前提下,给出协调的手指运动。<mark class="m-y">注意目标函数里多了一项 $\|q-q_{\mathrm{nom}}\|^2$——把手拉回舒服的手型,这在前一篇里是可选,这篇是标配</mark>。</p>
+  </div>
+</section>
+<section class="sec" id="s06">
+  <div class="sec-head">
+    <span class="sec-num c-blue">06</span>
+    <h2>视觉:别指望模型完全准</h2>
+  </div>
+  <div class="sec-body">
+    <p>纯解析控制有个前提假设:$J_h$、$A$、$H$ 能准确描述真实系统。对一把攥着镊子的灵巧手来说,这个假设很难成立。误差来源一大堆:手指标定不准、指尖软组织变形、接触位置漂移、腱传动误差、少量滑移、镊子自身的柔顺性,以及初始抓握的不确定性。</p>
+    <p>所以控制器干脆把闭环直接合在真正重要的那个量上——<strong class="m-ink">镊子尖端的位姿</strong>。外部相机、双目系统、光学追踪器或者标记点系统给出 $\hat x_{\mathrm{tip}}$。</p>
+    <p>视觉<strong class="m-ink">不替代</strong>解析控制器,它只负责提供式 (4) 里的那个误差项:</p>
+    <div class="eq compact"><div class="eq-body">$$e_x=x_d-\hat x_{\mathrm{tip}}$$</div></div>
+    <p>于是整个架构变成</p>
+    <div class="eq"><div class="eq-body">$$x_d\rightarrow e_x\rightarrow\text{笛卡尔控制器}\rightarrow\text{模型 QP}\rightarrow\dot q\rightarrow\text{手/工具}$$</div></div>
+    <p>$\hat x_{\mathrm{tip}}$ 由视觉反馈回来。<mark class="m-y">哪怕解析模型算出的手指运动不完美,下一个控制周期也会看到残余的笛卡尔误差,并把它纠掉</mark>。对精密镊子操作而言这点特别有用:直接测量工具尖端,就不需要把每一个"手指—工具接触状态"都估得那么准。</p>
+    <figure class="plate">
+      <img src="assets/images/fig_loop.jpg" alt="视觉把控制环合在镊子尖端上" loading="lazy">
+      <figcaption><span class="fig-no">03</span>视觉把控制环合在镊子尖端上</figcaption>
+    </figure>
+  </div>
+</section>
+<section class="sec" id="s07">
+  <div class="sec-head">
+    <span class="sec-num c-red">07</span>
+    <h2>触觉:视觉管去哪,触觉管夹没夹稳</h2>
+  </div>
+  <div class="sec-body">
+    <p>视觉反馈控制的是镊子<strong class="m-ink">去哪里</strong>,它不保证手指一直稳稳夹着。设接触力向量 $f=[f_1^T,\ldots,f_m^T]^T$,作用在工具上的净力旋量是 $w=Gf$,$G$ 是抓取矩阵。手指关节力矩满足</p>
+    <div class="eq compact"><div class="eq-body">$$\tau=J_h^Tf$$</div><span class="eq-tag">(6)</span></div>
+    <p>接触力可以拆成 $f=f_{\mathrm{task}}+f_{\mathrm{int}}$,其中内力满足</p>
+    <div class="eq compact"><div class="eq-body">$$Gf_{\mathrm{int}}=0$$</div><span class="eq-tag">(7)</span></div>
+    <p>这些力能提高抓取稳定性,又不会让工具产生任何净运动。所以触觉控制器可以专门去调内力,$f_{\mathrm{int}}\rightarrow f_{\mathrm{int}}^d$,例如</p>
+    <div class="eq compact"><div class="eq-body">$$\tau_f=J_h^TK_f(f_d-\hat f)$$</div><span class="eq-tag">(8)</span></div>
+    <p>完整的关节指令可以概念性地拆成两段:</p>
+    <div class="eq"><div class="eq-body">$$\tau=\tau_{\mathrm{motion}}+\tau_{\mathrm{grasp}}$$</div></div>
+    <p>运动控制器产生跟踪工具尖端所需要的协调运动,抓取控制器则维持足够的法向力,防止滑移。近年触觉在掌操作的研究也表明,在基于优化的操作里加上接触力调节与柔顺性,鲁棒性比开环执行轨迹要好 [5]。</p>
+  </div>
+</section>
+<section class="sec" id="s08">
+  <div class="sec-head">
+    <span class="sec-num c-yellow">08</span>
+    <h2>完整架构:三个角色被刻意分开</h2>
+  </div>
+  <div class="sec-body">
+    <p>整个系统包含三层嵌套的功能。</p>
+    <p><strong class="m-ink">工具空间控制。</strong> 视觉测量 $x_{\mathrm{tip}}$,笛卡尔误差 $e_x=x_d-x_{\mathrm{tip}}$,期望工具速度 $v_x^*=K_pe_x$。</p>
+    <p><strong class="m-ink">基于模型的手部协调。</strong> 解析模型通过式 (5) 的 QP 求解 $J_h\dot q=A\nu$ 与 $H\nu\approx v_x^*$,产出协调的手指运动。</p>
+    <p><strong class="m-ink">接触力调节。</strong> 触觉测量 $f_i$,把内抓取力调到 $f_d$,而有意不改变工具运动。</p>
+    <p>三个感知与建模角色是刻意分开的,各自回答一个问题:</p>
+    <div class="eq compact"><div class="eq-body">$$\text{模型:手指应该怎么动?}$$</div></div>
+    <div class="eq compact"><div class="eq-body">$$\text{视觉:工具尖端真的到了吗?}$$</div></div>
+    <div class="eq compact"><div class="eq-body">$$\text{触觉:工具还夹得稳吗?}$$</div></div>
+  </div>
+</section>
+<section class="sec" id="s09">
+  <div class="sec-head">
+    <span class="sec-num c-blue">09</span>
+    <h2>二维算例:5 → 4.6 → 4.93 → 4.99 → 5.00</h2>
+  </div>
+  <div class="sec-body">
+    <p>考虑两根平面 2-DOF 手指夹一把刚性工具。关节向量 $q=[q_{11},q_{12},q_{21},q_{22}]^T$,工具的平面状态是 $\xi=[x,y,\theta]^T$。假设两个接触点对称分布:$r_1=(-a,0)^T$、$r_2=(a,0)^T$。工具水平时</p>
+    <div class="eq"><div class="eq-body">$$A=\begin{bmatrix}1&0&0\\0&1&-a\\1&0&0\\0&1&a\end{bmatrix}$$</div></div>
+    <p>接触约束是</p>
+    <div class="eq compact"><div class="eq-body">$$J_h(q)\dot q=A\dot\xi$$</div><span class="eq-tag">(9)</span></div>
+    <p>假设期望操作是保持姿态不变、把尖端向右平移 5 毫米,即 $\Delta\xi_d=[5,0,0]^T$ 毫米,那么 $A\Delta\xi_d=[5,0,5,0]^T$ 毫米——两个接触点都该向右挪大约 5 毫米。模型先算出一次关节位移:</p>
+    <div class="eq compact"><div class="eq-body">$$\Delta q=J_h^\dagger A\Delta\xi_d$$</div></div>
+    <p>但模型误差让真实工具只走了 4.6 毫米。相机看到 $x_{\mathrm{measured}}=4.6$ 毫米,残余误差变成</p>
+    <div class="eq compact"><div class="eq-body">$$e_x=5.0-4.6=0.4~\mathrm{mm}$$</div></div>
+    <p>下一轮指令是 $v_x^*=K_p(0.4)$,于是</p>
+    <div class="eq"><div class="eq-body">$$5\rightarrow4.6\rightarrow4.93\rightarrow4.99\rightarrow5.00~\mathrm{mm}$$</div></div>
+    <p>留意这个序列:<span class="e-r">解析模型根本不需要一次开环就把 5 毫米走准</span>。这就是"解析运动学 + 视觉反馈"最大的好处。与此同时间,触觉环路把法向接触力维持在 $F_{n,1}\approx F_{n,1}^d$、$F_{n,2}\approx F_{n,2}^d$。定位精度和抓取稳定性因此是<mark class="m-y">分开控制</mark>的,互不干扰。</p>
+    <figure class="plate">
+      <img src="assets/images/fig_converge.jpg" alt="二维算例:模型误差被视觉逐轮吃掉" loading="lazy">
+      <figcaption><span class="fig-no">04</span>二维算例:模型误差被视觉逐轮吃掉</figcaption>
+    </figure>
+  </div>
+</section>
+<section class="sec" id="s10">
+  <div class="sec-head">
+    <span class="sec-num c-red">10</span>
+    <h2>可选扩展:让雅可比在线自适应</h2>
+  </div>
+  <div class="sec-body">
+    <p>一个可选的扩展,是让解析任务雅可比自己去适应系统性的模型误差。最近有纯在掌写字的工作表明,完整的手—物任务雅可比可以直接在线估计,不需要解析接触模型;那套物理系统的面内跟踪误差平均约 <span class="e-o">0.6 毫米</span>,而笔的运动完全由手指关节产生 [6]。</p>
+    <p>这提示了一条介于"纯解析建模"和"端到端学习"之间的中间路线。设 $J_a$ 是解析任务雅可比,引入修正 $\Delta J$,则</p>
+    <div class="eq compact"><div class="eq-body">$$J_{\mathrm{effective}}=J_a+\Delta J$$</div><span class="eq-tag">(10)</span></div>
+    <p>解析模型提供初始结构,观测到的工具运动去更新 $\Delta J$——比如用 $\Delta x_k=J_k\Delta q_k$ 递推更新 $J_k$。这样既保留了物理结构,又能补偿接触不确定性。当同一只手反复操作同一类镊子时,这条路尤其值得走。</p>
+  </div>
+</section>
+<section class="sec" id="s11">
+  <div class="sec-head">
+    <span class="sec-num c-yellow">11</span>
+    <h2>实验设计与消融实验</h2>
+  </div>
+  <div class="sec-body">
+    <p>实验平台大致需要:多自由度灵巧手、固定的机械腕、关节编码器、指尖触觉或力传感器、一把普通镊子,以及一套外部光学追踪或视觉系统。流程是机械臂先把灵巧手送到操作区域附近,然后锁死,后续所有精细运动都交给手。</p>
+    <p><strong class="m-ink">点对点运动。</strong> 第一组基准是六个笛卡尔目标:$(+5,0,0)$、$(-5,0,0)$、$(0,+5,0)$、$(0,-5,0)$、$(0,0,+5)$、$(0,0,-5)$ 毫米,姿态保持常数,一个代表性要求是</p>
+    <div class="eq compact"><div class="eq-body">$$|\Delta\theta|<0.5^\circ$$</div></div>
+    <p><strong class="m-ink">轨迹跟踪。</strong> 让尖端依次跟踪直线、半径 5 毫米的圆、方形、八字和三维螺旋。</p>
+    <p><strong class="m-ink">镊子操作。</strong> 最后一组实验同时控制位姿和开合,状态是 $x=[p_x,p_y,p_z,\phi_x,\phi_y,\phi_z,d]$:手先移向一个小目标,再缩小 $d$ 把它夹住。这组检验的是"工具平移"和"功能性动作"能不能同时做。</p>
+    <p>不过最值得做的还是消融——比较四个控制器:</p>
+    <ol>
+      <li><strong class="m-ink">A:只用解析模型</strong>,开环执行。</li>
+      <li><strong class="m-ink">B:解析模型 + 视觉</strong>,加上视觉伺服。</li>
+      <li><strong class="m-ink">C:解析模型 + 视觉 + 触觉</strong>,再加力控。</li>
+      <li><strong class="m-ink">D:在线任务雅可比</strong>,配视觉反馈。</li>
+    </ol>
+    <p>比较时测量尖端 RMSE、最大笛卡尔误差、姿态误差 $e_R$、重复性、接触滑移、力波动和任务成功率。这组实验能直接回答一个科学问题:</p>
+    <blockquote><p>毫米级的在掌灵巧工具操作,到底需要多少物理建模?</p></blockquote>
+    <figure class="plate">
+      <img src="assets/images/fig_ablation.jpg" alt="四种控制器的消融对比" loading="lazy">
+      <figcaption><span class="fig-no">05</span>四种控制器的消融对比</figcaption>
+    </figure>
+  </div>
+</section>
+<section class="sec" id="s12">
+  <div class="sec-head">
+    <span class="sec-num c-blue">12</span>
+    <h2>讨论</h2>
+  </div>
+  <div class="sec-body">
+    <p>传统系统的分工通常是"手→抓、臂→工具运动";这套架构换成了"臂→粗定位、手→局部笛卡尔操作"。灵巧手因此变成一台嵌在机械臂末端的第二台机械手——工作空间可能只有几毫米到几厘米,但这个空间可以拿去换精度。</p>
+    <p>这个概念很像粗/精两级执行器:机械臂给出"大工作空间 + 中等精度",手指给出"小工作空间 + 高精度"。对外科操作、实验室自动化、电子装配这类摆弄小器械的任务,这个区分尤其相关。</p>
+    <p>它还规避掉了一个强要求——解析的手—工具模型不必完美。取而代之的分配是:物理提供结构,视觉提供精度,触觉提供接触鲁棒性。至于接触位置会明显移动的大范围在掌运动,后续可以用带滚动与几何约束的轨迹优化方法把框架拓出去 [4]。</p>
+  </div>
+</section>
+<section class="sec" id="s13">
+  <div class="sec-head">
+    <span class="sec-num c-red">13</span>
+    <h2>结论</h2>
+  </div>
+  <div class="sec-body">
+    <p>这篇论文提出了一套基于模型的视觉—触觉框架,只用手指运动就实现了对镊子的精密灵巧操作。解析核心是</p>
+    <div class="eq compact"><div class="eq-body">$$J_h(q)\dot q=A(T_o,\alpha)\nu$$</div></div>
+    <p>配合任务映射</p>
+    <div class="eq compact"><div class="eq-body">$$\dot x_{\mathrm{tip}}=H(T_o,\alpha)\nu$$</div></div>
+    <p>把期望的尖端运动翻译成协调的手指运动。视觉反馈把控制环直接合在镊子尖端上:</p>
+    <div class="eq compact"><div class="eq-body">$$v_{\mathrm{tip}}^*=K_p(x_d-x_{\mathrm{tip}})$$</div></div>
+    <p>触觉反馈则独立调节内抓取力:</p>
+    <div class="eq compact"><div class="eq-body">$$Gf_{\mathrm{int}}=0$$</div></div>
+    <p>最终架构把三件事拼在一起:</p>
+    <div class="eq compact"><div class="eq-body">$$\text{基于模型的运动规划}+\text{视觉精度}+\text{触觉抓取稳定}$$</div></div>
+    <p>在约 ±5 毫米的目标操作范围内,这个表述避开了完整接触隐式规划的复杂度,同时比纯开环解析控制鲁棒得多。更一般地说,它提示了一条分层操作原则:<span class="e-o">机械臂做粗定位,灵巧手则作为围绕工具尖端的局部高精度机械手</span>。</p>
+  </div>
+</section>
+<section class="sec" id="s14">
+  <div class="sec-head">
+    <span class="sec-num c-yellow">14</span>
+    <h2>参考文献</h2>
+  </div>
+  <div class="sec-body">
+    <p class="ref">[1] A. Cole, J. Hauser, and S. Sastry, "Kinematics and Control of Multifingered Hands with Rolling Contact," <em>IEEE Transactions on Automatic Control</em>, vol. 34, no. 4, pp. 398–404, 1989. DOI: 10.1109/9.28014.</p>
+    <p class="ref">[2] T. Senoo, D. Yoneyama, A. Namiki, and M. Ishikawa, "Tweezers Manipulation Using High-Speed Visual Servoing Based on Contact Analysis," <em>IEEE International Conference on Robotics and Biomimetics</em>, pp. 1936–1941, 2011. DOI: 10.1109/ROBIO.2011.6181574.</p>
+    <p class="ref">[3] M. F. Reis, A. C. Leite, P. J. From, L. Hsu, and F. C. Lizarralde, "Visual Servoing for Object Manipulation with a Multifingered Robot Hand," <em>IFAC-PapersOnLine</em>, vol. 48, no. 19, pp. 1–6, 2015. DOI: 10.1016/j.ifacol.2015.12.001.</p>
+    <p class="ref">[4] F. Yang, T. Power, S. Aguilera Marinovic, S. Iba, R. Soltani Zarrin, and D. Berenson, "Multi-Finger Manipulation via Trajectory Optimization With Differentiable Rolling and Geometric Constraints," <em>IEEE Robotics and Automation Letters</em>, vol. 10, no. 5, 2025. DOI: 10.1109/LRA.2025.3557752.</p>
+    <p class="ref">[5] H. Lee, Y. Kim, V. M. Staven, and C. Sloth, "Trajectory Optimization for In-Hand Manipulation with Tactile Force Control," <em>IEEE/RSJ International Conference on Intelligent Robots and Systems</em>, 2025. DOI: 10.1109/IROS60139.2025.11246500.</p>
+    <p class="ref">[6] K. Stewart, Y. Toshimitsu, and R. K. Katzschmann, "Rapid Learning of Dexterous In-Hand Pen Writing through Real-Time Jacobian Estimation," arXiv:2609.11775, 2026.</p>
+  </div>
+</section>
+
+  <footer class="foot">
+    <div class="foot-grid">
+      <div>
+        <h4>模型管协调,视觉管准头,触觉管抓稳</h4>
+        <p>Model-Based Visual–Tactile Control for Precision Dexterous In-Hand Tweezer Manipulation<br>中文精读 · 康定斯基/包豪斯排版 · 公式由 KaTeX 渲染</p>
+      </div>
+      <div class="blocks" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+    </div>
+    <p class="series"><b>系列第 2 篇</b> · 视觉定位 + 触觉抓稳 → 看前作 <a href="https://fangde.github.io/kandinsky-tweezers/">第 1 篇:腕部固定的解析建模</a></p>
+  </footer>
+</main>
+
+<button class="totop" aria-label="Back to top">↑</button>
+
+<script>
+(function(){
+  var heroArt=document.querySelector('.hero-art');
+  if(heroArt){window.addEventListener('load',function(){heroArt.classList.add('ready');});
+              setTimeout(function(){heroArt.classList.add('ready');},600);}
+
+  var bar=document.getElementById('bar'),
+      nav=document.querySelector('.nav'),
+      top=document.querySelector('.totop'),
+      doc=document.documentElement;
+
+  function onScroll(){
+    var max=doc.scrollHeight-doc.clientHeight;
+    var p=max>0?doc.scrollTop/max:0;
+    if(bar)bar.style.width=(p*100)+'%';
+    if(nav)nav.classList.toggle('on',doc.scrollTop>window.innerHeight*0.55);
+    if(top)top.classList.toggle('on',doc.scrollTop>900);
+  }
+  document.addEventListener('scroll',onScroll,{passive:true});
+  onScroll();
+
+  if('IntersectionObserver' in window){
+    var io=new IntersectionObserver(function(es){
+      es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target);} });
+    },{rootMargin:'0px 0px -6% 0px',threshold:0.06});
+    document.querySelectorAll('.sec, .plate, .eq, blockquote').forEach(function(el){
+      el.classList.add('rv'); io.observe(el);
+    });
+    var links=[].slice.call(document.querySelectorAll('.nav a'));
+    var io2=new IntersectionObserver(function(es){
+      es.forEach(function(e){
+        if(e.isIntersecting){
+          var h='#'+e.target.id;
+          links.forEach(function(a){a.classList.toggle('active',a.getAttribute('href')===h);});
+        }
+      });
+    },{rootMargin:'-25% 0px -65% 0px'});
+    document.querySelectorAll('.sec').forEach(function(s){io2.observe(s);});
+  }
+
+  /* safety net: if the reveal never fires, show everything anyway */
+  setTimeout(function(){
+    document.querySelectorAll('.rv:not(.in)').forEach(function(el){el.classList.add('in');});
+  },2200);
+
+  if(top){top.addEventListener('click',function(){window.scrollTo({top:0,behavior:'smooth'});});}
+})();
+</script>
+</body>
+</html>
